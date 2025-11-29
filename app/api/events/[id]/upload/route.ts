@@ -37,6 +37,20 @@ export async function POST(
       }, { status: 400 });
     }
 
+    // Look up the category ID from the categories table
+    const { data: categoryData, error: categoryError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('label', category)
+      .single();
+
+    if (categoryError || !categoryData) {
+      console.error('Category lookup error:', categoryError);
+      return NextResponse.json({ 
+        error: 'Invalid category. Please select a valid category.' 
+      }, { status: 400 });
+    }
+
     const BUCKET = 'event-files';
     const filePath = `event/${eventId}/${Date.now()}_${file.name}`;
 
@@ -67,7 +81,7 @@ export async function POST(
         file_path: filePath,
         file_size: file.size,
         file_type: file.type,
-        category: category,
+        category_id: categoryData.id,
         uploaded_by: user.id
       })
       .select()
