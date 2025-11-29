@@ -9,19 +9,16 @@ export async function GET(
   try {
     const { id } = await params
     
-    // 1. Autenticación
     const user = await getCurrentUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 2. Verificar acceso
     const userRole = await checkEventAccess(user.id, id)
     if (!userRole) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // 3. Obtener timeline
     const { data: timeline, error } = await supabase
       .from('timeline_entries')
       .select('*')
@@ -47,19 +44,16 @@ export async function POST(
   try {
     const { id } = await params
     
-    // 1. Autenticación
     const user = await getCurrentUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 2. Verificar permisos (solo ADMIN y MANAGER pueden crear)
     const userRole = await checkEventAccess(user.id, id)
     if (!hasPermission(userRole, 'MANAGER')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    // 3. Validar datos
     const body = await req.json()
     const { time, description, type, location, notes } = body
 
@@ -70,7 +64,6 @@ export async function POST(
       )
     }
 
-    // 4. Crear entrada de timeline
     const { data: entry, error } = await supabase
       .from('timeline_entries')
       .insert({
