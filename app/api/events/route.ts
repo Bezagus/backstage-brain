@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const events = [
     {
       id: 1,
@@ -25,6 +25,19 @@ export async function GET() {
     },
   ];
 
-  return NextResponse.json({ events });
+  const search = req.nextUrl.searchParams.get('search');
+
+  let filteredEvents = events;
+
+  if (search) {
+    filteredEvents = events.filter(event => {
+      const searchTerm = search.toLowerCase();
+      const nameMatch = event.name.toLowerCase().includes(searchTerm);
+      const dateMatch = event.date.toLowerCase().includes(searchTerm);
+      return nameMatch || dateMatch;
+    });
+  }
+
+  return NextResponse.json({ events: filteredEvents });
 }
 
