@@ -58,7 +58,6 @@ export default function Home() {
         {/* Upload Card */}
         <Link href="/upload" className="group">
           <Card className="h-full overflow-hidden border-slate-200 dark:border-zinc-800 hover:shadow-xl hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-300 group-hover:-translate-y-1">
-            <div className="h-2 w-full bg-black dark:bg-gray-900" />
             <CardHeader className="space-y-4">
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-gray-100 dark:bg-gray-900/30 rounded-2xl text-black dark:text-gray-300 group-hover:scale-110 transition-transform">
@@ -77,7 +76,6 @@ export default function Home() {
         {/* Chat Card */}
         <Link href="/chat" className="group">
           <Card className="h-full overflow-hidden border-slate-200 dark:border-zinc-800 hover:shadow-xl hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-300 group-hover:-translate-y-1">
-            <div className="h-2 w-full bg-black dark:bg-gray-900" />
             <CardHeader className="space-y-4">
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-gray-100 dark:bg-gray-900/30 rounded-2xl text-black dark:text-gray-300 group-hover:scale-110 transition-transform">
@@ -96,7 +94,6 @@ export default function Home() {
         {/* Timeline Card */}
         <Link href="/timeline" className="group">
           <Card className="h-full overflow-hidden border-slate-200 dark:border-zinc-800 hover:shadow-xl hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-300 group-hover:-translate-y-1">
-            <div className="h-2 w-full bg-black dark:bg-gray-900" />
             <CardHeader className="space-y-4">
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-gray-100 dark:bg-gray-900/30 rounded-2xl text-black dark:text-gray-300 group-hover:scale-110 transition-transform">
