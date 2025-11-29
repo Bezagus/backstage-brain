@@ -35,14 +35,12 @@ async function streamToString(stream: ReadableStream<Uint8Array>): Promise<strin
     return result;
 }
 
-// CAMBIO 2: Definir params como una Promesa (Next.js 15)
 export async function POST(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: { id: string } }
 ) {
     try {
-        // CAMBIO 3: Desempaquetar params con await
-        const { id: eventId } = await params;
+        const { id: eventId } =  params;
 
         const body = await req.json();
         const { message } = body;
@@ -51,118 +49,41 @@ export async function POST(
             return NextResponse.json({ error: 'Message is required' }, { status: 400 });
         }
 
-        // Contexto del evento (Hardcoded por ahora, preparado para ser dinámico)
-        const context = `
-    DOCUMENTO: RIDER TÉCNICO Y HOSPITALITY
-    ARTISTA: LOS ALGORITMOS
-    EVENTO: HACKATHON FEST 2025
-    FECHA: 30 DE NOVIEMBRE 2025
-    VERSIÓN: FINAL V1
+        const { data: files, error: dbError } = await supabase
+            .from('event_files')
+            .select('file_path, file_name')
+            .eq('event_id', eventId);
 
-    ---
-
-    1. CONTACTOS DE PRODUCCIÓN
-    --------------------------
-    Tour Manager: Ana "Loop" García
-    Teléfono: +54 9 11 1234 5678
-    Email: ana@losalgoritmos.band
-
-    Ingeniero de Sonido (FOH): Beto "Bass" Méndez
-    Teléfono: +54 9 11 8765 4321
-
-    2. CRONOGRAMA (RUN OF SHOW)
-    ---------------------------
-    IMPORTANTE: Los horarios son estrictos. Cualquier retraso debe ser notificado al Stage Manager.
-
-    14:00 - Carga de equipos (Load-in)
-    15:00 - Armado de Backline
-    16:30 - Prueba de Sonido (Soundcheck) - Duración: 60 min
-    19:30 - Apertura de Puertas (Doors Open)
-    21:00 - Banda Soporte
-    22:15 - SHOW LOS ALGORITMOS (90 min)
-    00:00 - Desarme
-
-    3. REQUERIMIENTOS TÉCNICOS (AUDIO)
-    ----------------------------------
-    El sistema de PA debe ser capaz de cubrir toda la audiencia con 110dB SPL sin distorsión.
-
-    CONSOLA FOH:
-    Preferimos: Midas M32 o Yamaha CL5.
-    NO aceptamos: Consolas analógicas ni Behringer X32 (salvo emergencia).
-
-    ENERGÍA ELÉCTRICA:
-    Escenario: Necesitamos 4 tomas de corriente de 220V (Trifásica no necesaria, pero sí tierra real).
-    Posición de FOH: 1 toma de 220V exclusiva para la consola.
-
-    INPUT LIST (LISTA DE CANALES):
-    1. Kick (Micro: Shure Beta 52)
-    2. Snare (Micro: Shure SM57)
-    3. Hi-Hat
-    4. Bajo (Línea / DI Box)
-    5. Guitarra Eléctrica (Micro: Sennheiser e906)
-    6. Teclados L (DI Box)
-    7. Teclados R (DI Box)
-    8. Voz Principal (Micro: Shure SM58 - Trae el suyo propio)
-    9. Coros (Micro: Shure SM58)
-
-    4. HOSPITALITY Y CATERING (CAMERINOS)
-    -------------------------------------
-    El camerino debe estar disponible desde las 14:00hs. Debe tener llave, espejo y buena iluminación.
-
-    CENA (Para 6 personas - A las 20:00hs):
-    - 4 Menús con opción de carne/pollo.
-    - 2 Menús VEGANOS estrictos (Sin lácteos, sin huevo). Alérgicos al maní.
-
-    BEBIDAS EN CAMERINO:
-    - 12 Botellas de agua mineral sin gas (Temperatura ambiente).
-    - 6 Latas de bebida energizante.
-    - 1 Botella de Whisky (Marca preferida: Blue Label o similar).
-    - Café y té disponible todo el día.
-
-    NOTAS ADICIONALES:
-    El bajista llega tarde por vuelo, se presentará directamente a la prueba de sonido a las 16:45. Por favor tener su equipo listo.
-    `;
-
-        /* BLOQUE SUPABASE COMENTADO (Mantener comentado como en tu original) */
-        /*
-        const { data: files, error: listError } = await supabase.storage
-          .from('event-files')
-          .list(eventId);
-
-        if (listError) {
-          console.error('Supabase list error:', listError);
-          return NextResponse.json({ error: 'Failed to list files from Supabase' }, { status: 500 });
+        if (dbError) {
+            console.error('Supabase DB error:', dbError);
+            return NextResponse.json({ error: 'Failed to query files for the event' }, { status: 500 });
         }
 
         if (!files || files.length === 0) {
-          return NextResponse.json({ response: "I couldn't find any documents for this event. Please upload some files first." });
+            return NextResponse.json({ response: "I couldn't find any documents for this event. Please upload some files first." });
         }
 
         let context = '';
         for (const file of files) {
-          const { data: blob, error: downloadError } = await supabase.storage
-            .from('event-files')
-            .download(`${eventId}/${file.name}`);
+            const { data: blob, error: downloadError } = await supabase.storage
+                .from('event-files')
+                .download(file.file_path);
 
-          if (downloadError) {
-            console.error(`Failed to download ${file.name}:`, downloadError);
-            continue; // Skip this file and try the next one
-          }
+            if (downloadError) {
+                console.error(`Failed to download ${file.file_name}:`, downloadError);
+                continue;
+            }
 
-          if (blob) {
-            const fileContent = await streamToString(blob.stream());
-            context += `\n\n--- Content from ${file.name} ---\n${fileContent}`;
-          }
+            if (blob) {
+                const fileContent = await streamToString(blob.stream());
+                context += `\n\n--- Content from ${file.file_name} ---\n${fileContent}`;
+            }
         }
 
         if (!context) {
             return NextResponse.json({ error: 'Could not read content from any of the event files.' }, { status: 500 });
         }
-        */
 
-        // CAMBIO: Prompt simplificado.
-        // Ya no necesitamos repetirle quién es, porque eso está en el systemInstruction.
-        // Solo le pasamos los datos y la pregunta.
         const prompt = `
     CONTEXTO DEL EVENTO:
     ${context}
