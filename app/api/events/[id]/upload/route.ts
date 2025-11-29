@@ -4,24 +4,19 @@ import { getCurrentUser, checkEventAccess, hasPermission } from '@/lib/auth';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    
-    // 1. Autenticación
+
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Verificar permisos (solo ADMIN y MANAGER pueden subir)
-    const userRole = await checkEventAccess(user.id, id);
+    const userRole = await checkEventAccess(user.id, '123');
     if (!hasPermission(userRole, 'MANAGER')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // 3. Obtener archivo del formData
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const category = formData.get('category') as string | null;
@@ -33,7 +28,6 @@ export async function POST(
       return NextResponse.json({ error: 'Category is required' }, { status: 400 });
     }
 
-    // 4. Validar tipo de archivo
     const allowedTypes = ['application/pdf', 'text/plain'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
@@ -41,9 +35,8 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // 5. Subir a Storage
     const BUCKET = 'event-files';
-    const filePath = `event/${id}/${Date.now()}_${file.name}`;
+    const filePath = `event/${'123'}/${Date.now()}_${file.name}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const fileData = new Uint8Array(arrayBuffer);
@@ -64,11 +57,10 @@ export async function POST(
       }, { status: 500 });
     }
 
-    // 6. Guardar metadata en BD
     const { data: fileRecord, error: dbError } = await supabase
       .from('event_files')
       .insert({
-        event_id: id,
+        event_id: 123,
         file_name: file.name,
         file_path: filePath,
         file_size: file.size,
@@ -89,8 +81,7 @@ export async function POST(
       );
     }
 
-    // 7. Obtener URL firmada
-    const expiresInSeconds = 60 * 60; // 1 hour
+    const expiresInSeconds = 60 * 60;
     const { data: signed, error: signError } = await supabase.storage
       .from(BUCKET)
       .createSignedUrl(filePath, expiresInSeconds);

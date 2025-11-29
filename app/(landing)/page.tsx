@@ -3,10 +3,10 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Star, Zap, Shield, Globe, Upload, MessageSquare, Calendar, User2, Search, Bell, Menu } from "lucide-react"
-import { motion } from "motion/react"
+import { motion, Variants } from "framer-motion"
 
 export default function LandingPage() {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -17,7 +17,7 @@ export default function LandingPage() {
     }
   }
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,

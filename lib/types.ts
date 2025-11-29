@@ -68,4 +68,8 @@ export interface ChatMessage {
   source_file_id: string | null
   source_document_name: string | null
   created_at: string
+  file_id?: string;
+  event_files?: {
+    file_name: string;
+  };
 }

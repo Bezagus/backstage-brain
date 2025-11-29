@@ -37,10 +37,10 @@ async function streamToString(stream: ReadableStream<Uint8Array>): Promise<strin
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: eventId } =  params;
+        const { id: eventId } = await params;
 
         const body = await req.json();
         const { message } = body;
