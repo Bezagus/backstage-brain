@@ -46,15 +46,7 @@ export default function LandingPage() {
             </div>
             <span className="text-xl font-bold tracking-tight">Backstage Brain</span>
           </div>
-          <nav className="hidden md:flex gap-8 text-sm font-medium text-slate-600 dark:text-slate-400">
-            <Link href="#features" className="hover:text-black dark:hover:text-white transition-colors">Características</Link>
-            <Link href="#testimonials" className="hover:text-black dark:hover:text-white transition-colors">Testimonios</Link>
-            <Link href="#pricing" className="hover:text-black dark:hover:text-white transition-colors">Precios</Link>
-          </nav>
           <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors hidden sm:block">
-              Iniciar sesión
-            </Link>
             <Link href="/signup">
               <Button className="rounded-full px-6 bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200">
                 Comenzar ahora <ArrowRight className="ml-2 h-4 w-4" />
