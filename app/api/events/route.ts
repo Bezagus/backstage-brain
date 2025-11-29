@@ -1,43 +1,51 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
-  const events = [
-    {
-      id: 1,
-      name: 'Tech Conference 2025',
-      date: '2025-12-15T10:00:00Z',
-      location: 'San Francisco, CA',
-      description: 'A conference about the future of technology.',
-    },
-    {
-      id: 2,
-      name: 'Design Summit',
-      date: '2026-01-20T09:00:00Z',
-      location: 'New York, NY',
-      description: 'A summit for designers and creative professionals.',
-    },
-    {
-      id: 3,
-      name: 'AI Workshop',
-      date: '2026-02-10T14:00:00Z',
-      location: 'Online',
-      description: 'A hands-on workshop on artificial intelligence.',
-    },
-  ];
+  try {
+    // 1. Autenticación
+    const user = await getCurrentUser(req)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  const search = req.nextUrl.searchParams.get('search');
+    // 2. Obtener parámetros de búsqueda
+    const search = req.nextUrl.searchParams.get('search')
 
-  let filteredEvents = events;
+    // 3. Query base: eventos donde el usuario tiene acceso
+    let query = supabase
+      .from('events')
+      .select(`
+        *,
+        event_users!inner(role)
+      `)
+      .eq('event_users.user_id', user.id)
+      .eq('is_archived', false)
+      .order('date', { ascending: true })
 
-  if (search) {
-    filteredEvents = events.filter(event => {
-      const searchTerm = search.toLowerCase();
-      const nameMatch = event.name.toLowerCase().includes(searchTerm);
-      const dateMatch = event.date.toLowerCase().includes(searchTerm);
-      return nameMatch || dateMatch;
-    });
+    // 4. Aplicar filtro de búsqueda si existe
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+    }
+
+    const { data: events, error } = await query
+
+    if (error) {
+      console.error('Error fetching events:', error)
+      return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 })
+    }
+
+    // 5. Formatear respuesta con el rol del usuario
+    const eventsWithRole = events.map(event => ({
+      ...event,
+      userRole: event.event_users[0]?.role
+    }))
+
+    return NextResponse.json({ events: eventsWithRole })
+  } catch (error) {
+    console.error('Error in events GET:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  return NextResponse.json({ events: filteredEvents });
 }
 

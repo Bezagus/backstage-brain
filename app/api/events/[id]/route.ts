@@ -1,37 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
+import { getCurrentUser, checkEventAccess } from '@/lib/auth'
 
-const events = [
-  {
-    id: 1,
-    name: 'Tech Conference 2025',
-    date: '2025-12-15T10:00:00Z',
-    location: 'San Francisco, CA',
-    description: 'A conference about the future of technology.',
-  },
-  {
-    id: 2,
-    name: 'Design Summit',
-    date: '2026-01-20T09:00:00Z',
-    location: 'New York, NY',
-    description: 'A summit for designers and creative professionals.',
-  },
-  {
-    id: 3,
-    name: 'AI Workshop',
-    date: '2026-02-10T14:00:00Z',
-    location: 'Online',
-    description: 'A hands-on workshop on artificial intelligence.',
-  },
-];
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // 1. Autenticación
+    const user = await getCurrentUser(req)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const eventId = parseInt(params.id, 10);
-  const event = events.find((e) => e.id === eventId);
+    // 2. Verificar acceso al evento
+    const userRole = await checkEventAccess(user.id, params.id)
+    if (!userRole) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
-  if (!event) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    // 3. Obtener evento
+    const { data: event, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', params.id)
+      .eq('is_archived', false)
+      .single()
+
+    if (error || !event) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+
+    // 4. Retornar evento con rol del usuario
+    return NextResponse.json({
+      event: {
+        ...event,
+        userRole
+      }
+    })
+  } catch (error) {
+    console.error('Error in event GET:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  return NextResponse.json({ event });
 }
 
