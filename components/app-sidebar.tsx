@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Home, MessageSquare, Upload, Brain, User2, ChevronUp, Settings, LogOut, Loader2 } from "lucide-react"
+import { Calendar, CalendarPlus, Home, MessageSquare, Upload, Brain, User2, ChevronUp, Settings, LogOut, Loader2 } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +34,11 @@ const items = [
     title: "Upload Center",
     url: "/upload",
     icon: Upload,
+  },
+  {
+    title: "Crear Evento",
+    url: "/events/new",
+    icon: CalendarPlus,
   },
   {
     title: "Chat AI",

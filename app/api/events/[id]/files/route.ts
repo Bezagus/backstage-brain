@@ -24,7 +24,7 @@ export async function GET(
       .from('event_files')
       .select('*')
       .eq('event_id', params.id)
-      .order('created_at', { ascending: false })
+      .order('uploaded_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching files:', error)

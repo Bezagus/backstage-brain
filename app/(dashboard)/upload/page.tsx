@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +42,7 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('Horarios')
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Set first event as selected when events load
@@ -109,6 +111,35 @@ export default function UploadPage() {
     }
   }
 
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const droppedFiles = e.dataTransfer.files
+    if (droppedFiles && droppedFiles.length > 0) {
+      const file = droppedFiles[0]
+      handleUpload(file)
+    }
+  }
+
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return bytes + ' B'
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
@@ -154,8 +185,14 @@ export default function UploadPage() {
         </div>
       ) : events.length === 0 ? (
         <Card className="border-slate-200 dark:border-zinc-800">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-8 text-center space-y-4">
             <p className="text-slate-600 dark:text-slate-400">No tienes eventos disponibles.</p>
+            <p className="text-sm text-muted-foreground">
+              Crea un evento para habilitar el centro de carga y asignar archivos.
+            </p>
+            <Button asChild>
+              <Link href="/events/new">Crear mi primer evento</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -191,7 +228,15 @@ export default function UploadPage() {
              {/* Drag and Drop Area */}
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 dark:border-gray-800 rounded-xl p-8 text-center bg-gray-50/50 dark:bg-gray-900/10 hover:bg-gray-50 dark:hover:bg-gray-900/20 transition-colors cursor-pointer group"
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer group ${
+                isDragging
+                  ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-300 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/10 hover:bg-gray-50 dark:hover:bg-gray-900/20'
+              }`}
             >
                 <div className="flex flex-col items-center justify-center gap-4">
                     <div className="p-4 bg-white dark:bg-zinc-900 rounded-full shadow-sm group-hover:scale-110 transition-transform duration-300">
@@ -271,7 +316,7 @@ export default function UploadPage() {
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                                       <span>{formatFileSize(file.file_size)}</span>
                                       <span>•</span>
-                                      <span>{formatDate(file.created_at)}</span>
+                                      <span>{formatDate(file.uploaded_at)}</span>
                                   </div>
                               </div>
 

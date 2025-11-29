@@ -196,14 +196,19 @@ export default function Home() {
 
         {!loading && !error && events.length === 0 && (
           <Card className="border-slate-200 dark:border-zinc-800">
-            <CardContent className="p-8 text-center">
-              <Calendar className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                No tienes eventos asignados
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Espera a que un administrador te invite a un evento.
-              </p>
+            <CardContent className="p-8 text-center space-y-4">
+              <Calendar className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto" />
+              <div>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  No tienes eventos aún
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Crea tu primer evento para comenzar a cargar archivos y planificar.
+                </p>
+              </div>
+              <Button asChild className="mx-auto">
+                <Link href="/events/new">Crear evento</Link>
+              </Button>
             </CardContent>
           </Card>
         )}
