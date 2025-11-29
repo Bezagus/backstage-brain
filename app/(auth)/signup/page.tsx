@@ -1,10 +1,34 @@
+'use client'
+
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Zap, Mail, Loader2 } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function SignupPage() {
+  const { signUp } = useAuth()
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      await signUp(email, password, fullName)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al crear cuenta')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div className="w-full min-h-screen grid lg:grid-cols-2">
       {/* Left Side - Visuals */}
@@ -46,7 +70,12 @@ export default function SignupPage() {
           </div>
 
           <div className="grid gap-6">
-            <form>
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+            <form onSubmit={handleSubmit}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="name">
@@ -60,6 +89,10 @@ export default function SignupPage() {
                     autoComplete="name"
                     autoCorrect="off"
                     className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    disabled={loading}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -74,6 +107,10 @@ export default function SignupPage() {
                     autoComplete="email"
                     autoCorrect="off"
                     className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -87,10 +124,19 @@ export default function SignupPage() {
                     autoCapitalize="none"
                     autoComplete="new-password"
                     className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    minLength={6}
                   />
                 </div>
-                <Button className="bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200 w-full">
-                  Registrarse con Email
+                <Button
+                  type="submit"
+                  className="bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200 w-full"
+                  disabled={loading}
+                >
+                  {loading ? 'Creando cuenta...' : 'Registrarse con Email'}
                 </Button>
               </div>
             </form>
@@ -137,7 +183,7 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
             ¿Ya tienes una cuenta?{" "}
-            <Link href="/auth/login" className="font-semibold text-black dark:text-white hover:underline">
+            <Link href="/login" className="font-semibold text-black dark:text-white hover:underline">
               Iniciar Sesión
             </Link>
           </p>

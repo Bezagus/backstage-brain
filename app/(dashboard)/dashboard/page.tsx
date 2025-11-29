@@ -1,9 +1,15 @@
+'use client'
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { MessageSquare, Upload, Calendar, FileText, Bell, Star, ArrowUpRight } from "lucide-react"
+import { MessageSquare, Upload, Calendar, FileText, Bell, Star, ArrowUpRight, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/hooks/use-auth"
+import { useEvents } from "@/hooks/use-events"
 
 export default function Home() {
+  const { user } = useAuth()
+  const { events, loading, error } = useEvents()
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-end">
@@ -108,6 +114,77 @@ export default function Home() {
             </CardHeader>
           </Card>
         </Link>
+      </div>
+
+      {/* Events Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Mis Eventos</h2>
+
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+          </div>
+        )}
+
+        {error && (
+          <Card className="border-red-200 dark:border-red-800">
+            <CardContent className="p-6">
+              <p className="text-red-600 dark:text-red-400">{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loading && !error && events.length === 0 && (
+          <Card className="border-slate-200 dark:border-zinc-800">
+            <CardContent className="p-8 text-center">
+              <Calendar className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                No tienes eventos asignados
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Espera a que un administrador te invite a un evento.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loading && !error && events.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {events.map((event) => (
+              <Link key={event.id} href={`/events/${event.id}`}>
+                <Card className="h-full border-slate-200 dark:border-zinc-800 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 transition-all">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{event.name}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {new Date(event.date).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </CardDescription>
+                      </div>
+                      <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        {event.userRole}
+                      </span>
+                    </div>
+                    {event.location && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                        📍 {event.location}
+                      </p>
+                    )}
+                    {event.description && (
+                      <p className="text-sm text-slate-500 dark:text-slate-500 mt-2 line-clamp-2">
+                        {event.description}
+                      </p>
+                    )}
+                  </CardHeader>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

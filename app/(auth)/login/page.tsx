@@ -1,10 +1,33 @@
+'use client'
+
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Zap } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
+  const { signIn } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      await signIn(email, password)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div className="w-full min-h-screen grid lg:grid-cols-2">
       {/* Left Side - Visuals */}
@@ -46,7 +69,12 @@ export default function LoginPage() {
           </div>
 
           <div className="grid gap-6">
-            <form>
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+            <form onSubmit={handleSubmit}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="email">
@@ -60,6 +88,10 @@ export default function LoginPage() {
                     autoComplete="email"
                     autoCorrect="off"
                     className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -78,10 +110,18 @@ export default function LoginPage() {
                     autoCapitalize="none"
                     autoComplete="current-password"
                     className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
                   />
                 </div>
-                <Button className="bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200 w-full">
-                  Iniciar Sesión
+                <Button
+                  type="submit"
+                  className="bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200 w-full"
+                  disabled={loading}
+                >
+                  {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                 </Button>
               </div>
             </form>
