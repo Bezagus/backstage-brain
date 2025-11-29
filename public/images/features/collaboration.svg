@@ -1,0 +1,18 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Globe circle -->
+  <circle cx="100" cy="100" r="80" fill="white" stroke="black" stroke-width="8"/>
+  
+  <!-- Longitude/Latitude lines -->
+  <ellipse cx="100" cy="100" rx="30" ry="80" fill="none" stroke="black" stroke-width="4"/>
+  <line x1="20" y1="100" x2="180" y2="100" stroke="black" stroke-width="4"/>
+  
+  <!-- Cartoon smiling faces around -->
+  <circle cx="50" cy="50" r="15" fill="white" stroke="black" stroke-width="4"/>
+  <circle cx="150" cy="50" r="15" fill="white" stroke="black" stroke-width="4"/>
+  <circle cx="50" cy="150" r="15" fill="white" stroke="black" stroke-width="4"/>
+  <circle cx="150" cy="150" r="15" fill="white" stroke="black" stroke-width="4"/>
+  
+  <!-- Connection lines -->
+  <line x1="65" y1="65" x2="85" y2="85" stroke="black" stroke-width="3" stroke-dasharray="5,5"/>
+  <line x1="135" y1="65" x2="115" y2="85" stroke="black" stroke-width="3" stroke-dasharray="5,5"/>
+</svg>
