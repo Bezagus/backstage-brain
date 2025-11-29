@@ -21,28 +21,21 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // 3. Obtener evento
-    const { data: event, error } = await supabase
-      .from('events')
+    // 3. Obtener archivos del evento
+    const { data: files, error } = await supabase
+      .from('event_files')
       .select('*')
-      .eq('id', id)
-      .eq('is_archived', false)
-      .single()
+      .eq('event_id', id)
+      .order('uploaded_at', { ascending: false })
 
-    if (error || !event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    if (error) {
+      console.error('Error fetching files:', error)
+      return NextResponse.json({ error: 'Failed to fetch files' }, { status: 500 })
     }
 
-    // 4. Retornar evento con rol del usuario
-    return NextResponse.json({
-      event: {
-        ...event,
-        userRole
-      }
-    })
+    return NextResponse.json({ files })
   } catch (error) {
-    console.error('Error in event GET:', error)
+    console.error('Error in files GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

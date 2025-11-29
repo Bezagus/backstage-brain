@@ -47,7 +47,7 @@ export default function LandingPage() {
             <span className="text-xl font-bold tracking-tight">Backstage Brain</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors hidden sm:block">
+            <Link href="/login" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors hidden sm:block">
               Iniciar sesión
             </Link>
             <Link href="/signup">

@@ -4,9 +4,11 @@ import { getCurrentUser, checkEventAccess, hasPermission } from '@/lib/auth'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     // 1. Autenticación
     const user = await getCurrentUser(req)
     if (!user) {
@@ -14,7 +16,7 @@ export async function GET(
     }
 
     // 2. Verificar acceso
-    const userRole = await checkEventAccess(user.id, params.id)
+    const userRole = await checkEventAccess(user.id, id)
     if (!userRole) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
@@ -23,7 +25,7 @@ export async function GET(
     const { data: timeline, error } = await supabase
       .from('timeline_entries')
       .select('*')
-      .eq('event_id', params.id)
+      .eq('event_id', id)
       .order('time', { ascending: true })
 
     if (error) {
@@ -40,9 +42,11 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     // 1. Autenticación
     const user = await getCurrentUser(req)
     if (!user) {
@@ -50,7 +54,7 @@ export async function POST(
     }
 
     // 2. Verificar permisos (solo ADMIN y MANAGER pueden crear)
-    const userRole = await checkEventAccess(user.id, params.id)
+    const userRole = await checkEventAccess(user.id, id)
     if (!hasPermission(userRole, 'MANAGER')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
@@ -70,7 +74,7 @@ export async function POST(
     const { data: entry, error } = await supabase
       .from('timeline_entries')
       .insert({
-        event_id: params.id,
+        event_id: id,
         time,
         description,
         type,

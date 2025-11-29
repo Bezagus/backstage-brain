@@ -1,10 +1,33 @@
+'use client'
+
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Zap } from "lucide-react"
+import { Zap, Mail, Lock } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
+  const { signIn } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      await signIn(email, password)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div className="w-full min-h-screen grid lg:grid-cols-2">
       {/* Left Side - Visuals */}
@@ -46,21 +69,33 @@ export default function LoginPage() {
           </div>
 
           <div className="grid gap-6">
-            <form>
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+            <form onSubmit={handleSubmit}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="email">
                     Correo Electrónico
                   </label>
-                  <Input
-                    id="email"
-                    placeholder="nombre@ejemplo.com"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect="off"
-                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      id="email"
+                      placeholder="nombre@ejemplo.com"
+                      type="email"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      autoCorrect="off"
+                      className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 pl-9"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between">
@@ -71,17 +106,28 @@ export default function LoginPage() {
                       ¿Olvidaste tu contraseña?
                     </Link>
                   </div>
-                  <Input
-                    id="password"
-                    placeholder="••••••••"
-                    type="password"
-                    autoCapitalize="none"
-                    autoComplete="current-password"
-                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
-                  />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      id="password"
+                      placeholder="••••••••"
+                      type="password"
+                      autoCapitalize="none"
+                      autoComplete="current-password"
+                      className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 pl-9"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
-                <Button className="bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200 w-full">
-                  Iniciar Sesión
+                <Button
+                  type="submit"
+                  className="bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200 w-full"
+                  disabled={loading}
+                >
+                  {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                 </Button>
               </div>
             </form>

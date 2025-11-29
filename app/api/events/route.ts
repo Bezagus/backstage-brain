@@ -49,3 +49,74 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getCurrentUser(req)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    let payload: unknown
+    try {
+      payload = await req.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+
+    const { name, date, location, description } = (payload || {}) as Record<string, unknown>
+
+    const trimmedName = typeof name === 'string' ? name.trim() : ''
+    const trimmedLocation = typeof location === 'string' ? location.trim() : ''
+    const descriptionValue =
+      typeof description === 'string' && description.trim().length > 0
+        ? description.trim()
+        : null
+    const dateValue = typeof date === 'string' ? date : ''
+
+    if (!trimmedName || !trimmedLocation || !dateValue) {
+      return NextResponse.json(
+        { error: 'Nombre, fecha y ubicación son obligatorios' },
+        { status: 400 }
+      )
+    }
+
+    const parsedDate = new Date(dateValue)
+    if (Number.isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: 'Fecha inválida' }, { status: 400 })
+    }
+
+    const { data: event, error } = await supabase
+      .from('events')
+      .insert({
+        name: trimmedName,
+        date: parsedDate.toISOString(),
+        location: trimmedLocation,
+        description: descriptionValue,
+        created_by: user.id
+      })
+      .select('*')
+      .single()
+
+    if (error || !event) {
+      console.error('Error creating event:', error)
+      return NextResponse.json(
+        { error: 'No se pudo crear el evento' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        event: {
+          ...event,
+          userRole: 'ADMIN'
+        }
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error('Error in events POST:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
