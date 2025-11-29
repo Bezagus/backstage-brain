@@ -10,18 +10,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data: sessionData, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (loginError) {
+      console.error('Supabase login error:', loginError.message);
+      return NextResponse.json({ error: loginError.message }, { status: 400 });
     }
 
-    return NextResponse.json({ data });
+    if (!sessionData.user) {
+        return NextResponse.json({ error: 'Login failed, user not found' }, { status: 500 });
+    }
+
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('event_id, role')
+      .eq('user_id', sessionData.user.id);
+
+    if (rolesError) {
+        console.error('Error fetching user roles:', rolesError.message);
+    }
+
+    return NextResponse.json({
+        ...sessionData,
+        user: {
+            ...sessionData.user,
+            roles: roles || []
+        }
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    console.error('Login route error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: `Invalid request: ${errorMessage}` }, { status: 400 });
   }
 }
 
