@@ -4,9 +4,11 @@ import { getCurrentUser, checkEventAccess } from '@/lib/auth'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     // 1. Autenticación
     const user = await getCurrentUser(req)
     if (!user) {
@@ -14,7 +16,7 @@ export async function GET(
     }
 
     // 2. Verificar acceso al evento
-    const userRole = await checkEventAccess(user.id, params.id)
+    const userRole = await checkEventAccess(user.id, id)
     if (!userRole) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
@@ -23,7 +25,7 @@ export async function GET(
     const { data: event, error } = await supabase
       .from('events')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('is_archived', false)
       .single()
 

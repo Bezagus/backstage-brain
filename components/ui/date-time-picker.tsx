@@ -110,7 +110,7 @@ export function DateTimePicker({
         </PopoverContent>
       </Popover>
       <div className="relative flex items-center">
-        <Clock className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           type="time"
           value={time}

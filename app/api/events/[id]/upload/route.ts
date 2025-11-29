@@ -4,9 +4,11 @@ import { getCurrentUser, checkEventAccess, hasPermission } from '@/lib/auth'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     // 1. Autenticación
     const user = await getCurrentUser(req)
     if (!user) {
@@ -14,7 +16,7 @@ export async function POST(
     }
 
     // 2. Verificar permisos (solo ADMIN y MANAGER pueden subir)
-    const userRole = await checkEventAccess(user.id, params.id)
+    const userRole = await checkEventAccess(user.id, id)
     if (!hasPermission(userRole, 'MANAGER')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
@@ -42,7 +44,7 @@ export async function POST(
     }
 
     // 5. Subir a Storage
-    const filePath = `${params.id}/${file.name}`
+    const filePath = `${id}/${file.name}`
 
     const { error: uploadError } = await supabase.storage
       .from('event-files')
@@ -63,7 +65,7 @@ export async function POST(
     const { data: fileRecord, error: dbError } = await supabase
       .from('event_files')
       .insert({
-        event_id: params.id,
+        event_id: id,
         file_name: file.name,
         file_path: filePath,
         file_size: file.size,
