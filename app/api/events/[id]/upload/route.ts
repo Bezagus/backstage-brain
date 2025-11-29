@@ -109,3 +109,68 @@ export async function POST(
     return NextResponse.json({ error: 'Error processing file upload' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: eventId } = await params;
+
+    const user = await getCurrentUser(req);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userRole = await checkEventAccess(user.id, eventId);
+    if (!hasPermission(userRole, 'MANAGER')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // 2. Get fileId from request body
+    const { fileId } = await req.json();
+    if (!fileId) {
+      return NextResponse.json({ error: 'fileId is required' }, { status: 400 });
+    }
+
+    const BUCKET = 'event-files';
+
+    // 3. Fetch file path from DB
+    const { data: file, error: fetchError } = await supabase
+      .from('event_files')
+      .select('file_path')
+      .eq('id', fileId)
+      .single();
+
+    if (fetchError || !file) {
+      console.error('Error fetching file for deletion:', fetchError);
+      return NextResponse.json({ error: 'File not found or could not be fetched' }, { status: 404 });
+    }
+
+    // 4. Delete file from Storage
+    const { error: storageError } = await supabase.storage
+      .from(BUCKET)
+      .remove([file.file_path]);
+
+    if (storageError) {
+      console.error('Storage deletion error:', storageError);
+      return NextResponse.json({ error: 'Failed to delete file from storage' }, { status: 500 });
+    }
+
+    const { error: dbError } = await supabase
+      .from('event_files')
+      .delete()
+      .eq('id', fileId);
+
+    if (dbError) {
+      console.error('Database deletion error:', dbError);
+      return NextResponse.json({ error: 'Failed to delete file metadata from database' }, { status: 500 });
+    }
+
+    return NextResponse.json({ message: 'File deleted successfully' });
+
+  } catch (error) {
+    console.error('Delete error:', error);
+    return NextResponse.json({ error: 'Error processing delete request' }, { status: 500 });
+  }
+}
