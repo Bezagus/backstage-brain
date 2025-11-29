@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CalendarPlus, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { CalendarPlus, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Tag, FileText } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateTimePicker } from '@/components/ui/date-time-picker'
 import { post } from '@/lib/api'
 import type { Event, UserRole } from '@/lib/types'
 
@@ -35,6 +36,13 @@ export default function NewEventPage() {
     setForm((prev) => ({
       ...prev,
       [field]: event.target.value,
+    }))
+  }
+
+  const handleDateChange = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      date: value,
     }))
   }
 
@@ -114,14 +122,18 @@ export default function NewEventPage() {
               <label htmlFor="event-name" className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Nombre del evento
               </label>
-              <Input
-                id="event-name"
-                placeholder="Ej. Festival Backstage 2025"
-                value={form.name}
-                onChange={handleChange('name')}
-                disabled={submitting}
-                required
-              />
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="event-name"
+                  placeholder="Ej. Festival Backstage 2025"
+                  value={form.name}
+                  onChange={handleChange('name')}
+                  disabled={submitting}
+                  required
+                  className="pl-9"
+                />
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -129,13 +141,11 @@ export default function NewEventPage() {
                 <label htmlFor="event-date" className="text-sm font-medium text-slate-700 dark:text-slate-200">
                   Fecha y hora
                 </label>
-                <Input
-                  id="event-date"
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.date}
-                  onChange={handleChange('date')}
+                  onChange={handleDateChange}
                   disabled={submitting}
-                  required
+                  placeholder="Selecciona fecha y hora"
                 />
               </div>
 
@@ -158,14 +168,17 @@ export default function NewEventPage() {
               <label htmlFor="event-description" className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Descripción
               </label>
-              <textarea
-                id="event-description"
-                className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="Notas generales, artistas, requisitos técnicos..."
-                value={form.description}
-                onChange={handleChange('description')}
-                disabled={submitting}
-              />
+              <div className="relative">
+                <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <textarea
+                  id="event-description"
+                  className="min-h-[120px] w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="Notas generales, artistas, requisitos técnicos..."
+                  value={form.description}
+                  onChange={handleChange('description')}
+                  disabled={submitting}
+                />
+              </div>
             </div>
 
             {error && (

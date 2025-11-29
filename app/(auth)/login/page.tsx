@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Zap } from "lucide-react"
+import { Zap, Mail, Lock } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
@@ -80,19 +80,22 @@ export default function LoginPage() {
                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="email">
                     Correo Electrónico
                   </label>
-                  <Input
-                    id="email"
-                    placeholder="nombre@ejemplo.com"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect="off"
-                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      id="email"
+                      placeholder="nombre@ejemplo.com"
+                      type="email"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      autoCorrect="off"
+                      className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 pl-9"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between">
@@ -103,18 +106,21 @@ export default function LoginPage() {
                       ¿Olvidaste tu contraseña?
                     </Link>
                   </div>
-                  <Input
-                    id="password"
-                    placeholder="••••••••"
-                    type="password"
-                    autoCapitalize="none"
-                    autoComplete="current-password"
-                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      id="password"
+                      placeholder="••••••••"
+                      type="password"
+                      autoCapitalize="none"
+                      autoComplete="current-password"
+                      className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 pl-9"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
                 <Button
                   type="submit"
