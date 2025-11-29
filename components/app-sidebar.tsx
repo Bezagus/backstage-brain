@@ -24,12 +24,15 @@ import { useAuth } from "@/hooks/use-auth"
 import { useState } from "react"
 
 // Menu items.
-const items = [
+const platformItems = [
   {
     title: "Home",
     url: "/dashboard",
     icon: Home,
   },
+]
+
+const gestionItems = [
   {
     title: "Upload Center",
     url: "/upload",
@@ -41,14 +44,17 @@ const items = [
     icon: CalendarPlus,
   },
   {
-    title: "Chat AI",
-    url: "/chat",
-    icon: MessageSquare,
-  },
-  {
     title: "Timeline",
     url: "/timeline",
     icon: Calendar,
+  },
+]
+
+const aiItems = [
+  {
+    title: "Chat AI",
+    url: "/chat",
+    icon: MessageSquare,
   },
 ]
 
@@ -88,7 +94,41 @@ export function AppSidebar() {
           <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {platformItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <Link href={item.url} className="hover:text-black transition-colors">
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Gestión</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {gestionItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <Link href={item.url} className="hover:text-black transition-colors">
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Asistente AI</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {aiItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <Link href={item.url} className="hover:text-black transition-colors">

@@ -12,16 +12,22 @@ interface UseChatReturn {
   refetch: () => Promise<void>
 }
 
-export function useChat(): UseChatReturn {
+export function useChat(eventId: string | null): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchMessages = async () => {
+    if (!eventId) {
+      setMessages([])
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
-      const response = await get<{ messages: ChatMessage[] }>('/api/chat')
+      const response = await get<{ messages: ChatMessage[] }>(`/api/events/${eventId}/chat`)
       setMessages(response.messages)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch messages')
@@ -32,12 +38,16 @@ export function useChat(): UseChatReturn {
   }
 
   const sendMessage = async (message: string) => {
+    if (!eventId) {
+      throw new Error('Event ID is required')
+    }
+
     try {
       const response = await post<{
         userMessage: ChatMessage
         assistantMessage: ChatMessage
         response: string
-      }>('/api/chat', { message })
+      }>(`/api/events/${eventId}/chat`, { message })
 
       // Add both messages to state
       setMessages((prev) => [...prev, response.userMessage, response.assistantMessage])
@@ -50,7 +60,7 @@ export function useChat(): UseChatReturn {
 
   useEffect(() => {
     fetchMessages()
-  }, [])
+  }, [eventId])
 
   return {
     messages,

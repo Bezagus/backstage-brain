@@ -4,15 +4,17 @@ import { getCurrentUser, checkEventAccess, hasPermission } from '@/lib/auth';
 
 export async function POST(
   req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: eventId } = await params;
 
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userRole = await checkEventAccess(user.id, '123');
+    const userRole = await checkEventAccess(user.id, eventId);
     if (!hasPermission(userRole, 'MANAGER')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -36,7 +38,7 @@ export async function POST(
     }
 
     const BUCKET = 'event-files';
-    const filePath = `event/${'123'}/${Date.now()}_${file.name}`;
+    const filePath = `event/${eventId}/${Date.now()}_${file.name}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const fileData = new Uint8Array(arrayBuffer);
@@ -60,7 +62,7 @@ export async function POST(
     const { data: fileRecord, error: dbError } = await supabase
       .from('event_files')
       .insert({
-        event_id: 123,
+        event_id: eventId,
         file_name: file.name,
         file_path: filePath,
         file_size: file.size,

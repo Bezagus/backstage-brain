@@ -1,18 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Send, FileText, Bot, User, Loader2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
 import { useChat } from "@/hooks/use-chat"
+import { useEvents } from "@/hooks/use-events"
 
 export default function ChatPage() {
-  const { messages, loading, error, sendMessage } = useChat()
+  const { events, loading: eventsLoading } = useEvents()
+  const [selectedEventId, setSelectedEventId] = useState<string>('')
+  const { messages, loading, error, sendMessage } = useChat(selectedEventId || null)
   const [inputValue, setInputValue] = useState("")
   const [sending, setSending] = useState(false)
+
+  // Set first event as selected when events load
+  useEffect(() => {
+    if (events.length > 0 && !selectedEventId) {
+      setSelectedEventId(events[0].id)
+    }
+  }, [events, selectedEventId])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return
@@ -31,20 +43,65 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm z-10">
-        <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-900/30 flex items-center justify-center text-black dark:text-gray-300">
-            <Bot className="h-6 w-6" />
+    <div className="flex flex-col h-full max-w-4xl mx-auto">
+      {/* Event Selection */}
+      {eventsLoading ? (
+        <div className="flex items-center justify-center py-8 mb-4">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
         </div>
-        <div>
-            <h2 className="font-bold text-slate-900 dark:text-white">AI Assistant</h2>
-            <p className="text-xs text-black dark:text-gray-300 flex items-center gap-1">
-                <span className="block h-2 w-2 rounded-full bg-black dark:bg-gray-300 animate-pulse" />
-                Online
+      ) : events.length === 0 ? (
+        <Card className="border-slate-200 dark:border-zinc-800 mb-4">
+          <CardContent className="p-8 text-center">
+            <p className="text-slate-600 dark:text-slate-400">No tienes eventos disponibles.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="flex items-center gap-4 mb-4">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Evento:</label>
+          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <SelectTrigger className="w-[300px]">
+              <SelectValue placeholder="Selecciona un evento" />
+            </SelectTrigger>
+            <SelectContent>
+              {events.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {!selectedEventId && events.length > 0 && (
+        <Card className="border-slate-200 dark:border-zinc-800">
+          <CardContent className="p-8 text-center">
+            <Bot className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              Selecciona un evento
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Por favor selecciona un evento para comenzar a chatear.
             </p>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedEventId && (
+        <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm z-10">
+            <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-900/30 flex items-center justify-center text-black dark:text-gray-300">
+                <Bot className="h-6 w-6" />
+            </div>
+            <div>
+                <h2 className="font-bold text-slate-900 dark:text-white">AI Assistant</h2>
+                <p className="text-xs text-black dark:text-gray-300 flex items-center gap-1">
+                    <span className="block h-2 w-2 rounded-full bg-black dark:bg-gray-300 animate-pulse" />
+                    Online
+                </p>
+            </div>
+          </div>
 
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-6 bg-slate-50/50 dark:bg-zinc-950/50">
@@ -148,6 +205,8 @@ export default function ChatPage() {
             <p className="text-[10px] text-muted-foreground">Backstage Brain AI puede cometer errores. Verifica la información importante.</p>
         </div>
       </div>
+        </div>
+      )}
     </div>
   )
 }
