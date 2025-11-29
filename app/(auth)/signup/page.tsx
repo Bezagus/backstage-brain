@@ -9,36 +9,27 @@ export default function SignupPage() {
     <div className="w-full min-h-screen grid lg:grid-cols-2">
       {/* Left Side - Visuals */}
       <div className="hidden lg:flex flex-col bg-zinc-900 text-white py-12 px-12 justify-between relative overflow-hidden">
-        <div className="z-10 flex items-center gap-2 pt-2">
+        <Link href="/" className="z-10 flex items-center gap-2 pt-2 cursor-pointer hover:opacity-80 transition-opacity">
           <div className="bg-white text-black p-1.5 rounded-lg">
             <Zap className="h-5 w-5 fill-current" />
           </div>
           <span className="text-xl font-bold tracking-tight">Backstage Brain</span>
-        </div>
+        </Link>
 
-        <div className="z-10 relative flex flex-col items-center justify-center flex-1 py-8">
-           <div className="relative w-full max-w-[500px] aspect-square mb-6">
+        <div className="z-10 relative flex flex-col items-center justify-center flex-1">
+           <div className="relative w-full max-w-[400px] aspect-square">
                <Image 
-                src="/images/auth/signup-illustration.svg" 
+                src="/login.png" 
                 alt="Event Production Illustration" 
                 fill
                 className="object-contain"
                 priority
                />
            </div>
-           <div className="text-center mt-12 space-y-3 max-w-md px-4">
+           <div className="text-center mt-8 space-y-2 max-w-md">
                <h2 className="text-2xl font-bold">Organiza como un profesional</h2>
-               <p className="text-zinc-400 leading-relaxed">Únete a la comunidad de productores que están revolucionando la gestión de eventos.</p>
+               <p className="text-zinc-400">Únete a la comunidad de productores que están revolucionando la gestión de eventos.</p>
            </div>
-        </div>
-
-        <div className="z-10 relative pb-2">
-          <blockquote className="space-y-3">
-            <p className="text-lg leading-relaxed">
-              &ldquo;Backstage Brain ha transformado completamente cómo gestionamos nuestros festivales. Es indispensable.&rdquo;
-            </p>
-            <footer className="text-sm text-zinc-400">Sofia Martinez, Productora General</footer>
-          </blockquote>
         </div>
       </div>
 
