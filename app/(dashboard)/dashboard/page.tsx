@@ -6,10 +6,28 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useEvents } from "@/hooks/use-events"
+import { useDashboardStats } from "@/hooks/use-dashboard-stats"
+
+function formatTimeAgo(dateString: string | null): { value: string; unit: string } | null {
+  if (!dateString) return null
+  
+  const now = new Date()
+  const date = new Date(dateString)
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return { value: 'Ahora', unit: '' }
+  if (diffMins < 60) return { value: diffMins.toString(), unit: diffMins === 1 ? 'minuto' : 'minutos' }
+  if (diffHours < 24) return { value: diffHours.toString(), unit: diffHours === 1 ? 'hora' : 'horas' }
+  return { value: diffDays.toString(), unit: diffDays === 1 ? 'día' : 'días' }
+}
 
 export default function Home() {
   const { user } = useAuth()
   const { events, loading, error } = useEvents()
+  const { stats, loading: statsLoading } = useDashboardStats()
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-end">
@@ -32,29 +50,71 @@ export default function Home() {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6 p-6 md:grid-cols-3">
-          <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
-            <span className="text-sm font-medium text-black dark:text-gray-300">Archivos subidos</span>
-            <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">24</span>
-                <span className="text-xs text-muted-foreground">+4 hoy</span>
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
-            <span className="text-sm font-medium text-black dark:text-gray-300">Última actualización</span>
-            <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">10</span>
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">minutos</span>
-            </div>
-          </div>
+          {statsLoading ? (
+            <>
+              <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
+                <span className="text-sm font-medium text-black dark:text-gray-300">Archivos subidos</span>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
+                <span className="text-sm font-medium text-black dark:text-gray-300">Última actualización</span>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
+                <span className="text-sm font-medium text-black dark:text-gray-300">Próximos shows hoy</span>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
+                <span className="text-sm font-medium text-black dark:text-gray-300">Archivos subidos</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-slate-900 dark:text-white">{stats?.totalFiles || 0}</span>
+                  {stats && stats.filesToday > 0 && (
+                    <span className="text-xs text-muted-foreground">+{stats.filesToday} hoy</span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
+                <span className="text-sm font-medium text-black dark:text-gray-300">Última actualización</span>
+                <div className="flex items-baseline gap-2">
+                  {stats?.lastUpdate ? (() => {
+                    const timeAgo = formatTimeAgo(stats.lastUpdate)
+                    if (!timeAgo) {
+                      return <span className="text-lg font-medium text-slate-600 dark:text-slate-400">Nunca</span>
+                    }
+                    if (timeAgo.value === 'Ahora') {
+                      return <span className="text-lg font-medium text-slate-600 dark:text-slate-400">Ahora</span>
+                    }
+                    return (
+                      <>
+                        <span className="text-3xl font-bold text-slate-900 dark:text-white">{timeAgo.value}</span>
+                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{timeAgo.unit}</span>
+                      </>
+                    )
+                  })() : (
+                    <span className="text-lg font-medium text-slate-600 dark:text-slate-400">Nunca</span>
+                  )}
+                </div>
+              </div>
 
-          <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
-            <span className="text-sm font-medium text-black dark:text-gray-300">Próximos shows hoy</span>
-            <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">3</span>
-                <span className="text-xs text-muted-foreground">Ver agenda</span>
-            </div>
-          </div>
+              <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
+                <span className="text-sm font-medium text-black dark:text-gray-300">Próximos shows hoy</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-slate-900 dark:text-white">{stats?.showsToday || 0}</span>
+                  <span className="text-xs text-muted-foreground">Ver agenda</span>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
