@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, checkEventAccess, hasPermission } from '@/lib/auth';
-import pdf from 'pdf-parse';
 
 /**
  * Extract text content from file based on type
@@ -12,7 +11,9 @@ async function extractFileContent(file: File, fileData: Uint8Array): Promise<str
       const text = new TextDecoder('utf-8').decode(fileData);
       return text;
     } else if (file.type === 'application/pdf') {
-      const data = await pdf(Buffer.from(fileData));
+      // Dynamic import for pdf-parse (CommonJS module)
+      const pdfParse = await import('pdf-parse');
+      const data = await pdfParse(Buffer.from(fileData));
       return data.text;
     }
     return null;

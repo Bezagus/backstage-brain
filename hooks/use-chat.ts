@@ -70,7 +70,9 @@ export function useChat(eventId: string | null): UseChatReturn {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to send message')
+        const errorText = await response.text()
+        console.error('Chat API error:', response.status, errorText)
+        throw new Error(`Failed to send message: ${response.status} ${errorText}`)
       }
 
       const reader = response.body?.getReader()

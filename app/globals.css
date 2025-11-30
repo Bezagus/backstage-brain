@@ -120,3 +120,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Syntax highlighting theme - GitHub style */
+@import 'highlight.js/styles/github.css';
+
+/* Dark mode override */
+@media (prefers-color-scheme: dark) {
+  @import 'highlight.js/styles/github-dark.css';
+}
+
+/* Additional markdown styling refinements */
+.markdown-content {
+  @apply text-slate-800 dark:text-slate-200;
+}
+
+/* Ensure nested lists have proper spacing */
+.markdown-content ul ul,
+.markdown-content ol ul,
+.markdown-content ul ol,
+.markdown-content ol ol {
+  @apply mt-2 mb-2;
+}
+
+/* Table hover effect */
+.markdown-content tbody tr:hover {
+  @apply bg-slate-50/50 dark:bg-zinc-800/50;
+}
+
+/* Strikethrough support from GFM */
+.markdown-content del {
+  @apply line-through text-slate-500 dark:text-slate-400;
+}

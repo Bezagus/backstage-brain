@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { useChat } from "@/hooks/use-chat"
 import { useEvents } from "@/hooks/use-events"
+import { MarkdownMessage } from "@/components/chat/markdown-message"
 
 export default function ChatPage() {
   const { events, loading: eventsLoading } = useEvents()
@@ -154,7 +155,11 @@ export default function ChatPage() {
                     : "bg-white dark:bg-zinc-900 text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm border border-slate-100 dark:border-zinc-800"
                 )}
               >
-                <p className="leading-relaxed">{message.content}</p>
+                {message.role === 'user' ? (
+                  <p className="leading-relaxed">{message.content}</p>
+                ) : (
+                  <MarkdownMessage content={message.content} />
+                )}
                 {message.file_id && message.event_files?.file_name && (
                   <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-100/80 dark:bg-black/20 p-2.5 text-xs transition-colors hover:bg-slate-200/80 dark:hover:bg-black/40 cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-zinc-700">
                     <FileText className="h-4 w-4 text-black dark:text-gray-300 shrink-0" />
