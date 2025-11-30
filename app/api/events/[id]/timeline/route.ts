@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getCurrentUser, checkEventAccess } from '@/lib/auth';
 
 async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {
@@ -57,7 +57,6 @@ export async function GET(
             return NextResponse.json({ error: 'Access denied' }, { status: 403 });
         }
 
-        // 2. Fetch file list from the database
         const { data: files, error: dbError } = await supabase
             .from('event_files')
             .select('file_path, file_name')
@@ -69,10 +68,9 @@ export async function GET(
         }
 
         if (!files || files.length === 0) {
-            return NextResponse.json({ error: "No documents found for this event to generate a timeline." }, { status: 404 });
+            return NextResponse.json({ error: 'No documents found for this event to generate a timeline.' }, { status: 404 });
         }
 
-        // 3. Download and read file content
         let context = '';
         for (const file of files) {
             const { data: blob, error: downloadError } = await supabase.storage
@@ -98,15 +96,41 @@ export async function GET(
         const response = await result.response;
         const text = response.text();
 
-        let parsedData;
+        let parsedData: unknown;
         try {
             parsedData = JSON.parse(text);
         } catch (e) {
-            console.error("Error parsing JSON from Gemini:", e);
-            return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 });
+            console.error('Error parsing JSON from Gemini:', e);
+            return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
         }
 
-        return NextResponse.json(parsedData);
+        const { error: deleteError } = await supabase
+          .from('event_timelines')
+          .delete()
+          .eq('event_id', eventId);
+
+        if (deleteError) {
+          console.error('Failed to delete existing timeline:', deleteError);
+          return NextResponse.json({ error: 'Failed to clear previous timeline cache' }, { status: 500 });
+        }
+
+        const { error: cacheError } = await supabase
+          .from('event_timelines')
+          .insert({
+            event_id: eventId,
+            timeline_json: parsedData,
+            updated_at: new Date().toISOString(),
+          });
+
+        if (cacheError) {
+          console.error('Failed to cache timeline:', cacheError);
+          return NextResponse.json({ error: 'Failed to cache generated timeline' }, { status: 500 });
+        }
+
+        return NextResponse.json({
+          status: 'ok',
+          message: 'Timeline generated and cached successfully',
+        });
 
     } catch (error) {
         console.error('Timeline Generation API error:', error);

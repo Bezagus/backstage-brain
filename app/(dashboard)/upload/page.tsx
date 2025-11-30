@@ -44,6 +44,9 @@ const getFileBg = (type: string) => {
     }
 }
 
+class TimelineApiResponse {
+}
+
 export default function UploadPage() {
   const { events, loading: eventsLoading } = useEvents()
   const [selectedEventId, setSelectedEventId] = useState<string>('')
@@ -120,6 +123,9 @@ export default function UploadPage() {
       setError(err instanceof Error ? err.message : 'Error al subir archivo')
     } finally {
       setUploading(false)
+         await get<TimelineApiResponse>(
+            `/api/events/${selectedEventId}/timeline`
+        )
     }
   }
 

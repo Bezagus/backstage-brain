@@ -134,6 +134,10 @@ export async function POST(
     if (signError) {
       console.warn('createSignedUrl failed, falling back to getPublicUrl:', signError);
       const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
+
+      // Fire-and-forget timeline generation
+      triggerTimelineGeneration(eventId).catch(() => {/* swallow errors */});
+
       return NextResponse.json({
         message: 'File uploaded successfully',
         file: fileRecord,
@@ -141,15 +145,31 @@ export async function POST(
       });
     }
 
+    // Fire-and-forget timeline generation
+    triggerTimelineGeneration(eventId).catch(() => {/* swallow errors */});
+
     return NextResponse.json({
       message: 'File uploaded successfully',
       file: fileRecord,
-      // @ts-expect-error
+      // @ts-expect-error signedURL is provided by Supabase client but not in the TypeScript types
       signedUrl: signed.signedURL
     });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Error processing file upload' }, { status: 500 });
+  }
+}
+
+async function triggerTimelineGeneration(eventId: string) {
+  try {
+    // Llamamos al endpoint interno de timeline sin bloquear la subida
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/events/${eventId}/timeline`, {
+      method: 'GET',
+      // No reenviamos cookies; sólo nos interesa disparar el proceso
+      cache: 'no-store',
+    });
+  } catch (err) {
+    console.error('Failed to trigger timeline generation:', err);
   }
 }
 
@@ -208,6 +228,30 @@ export async function DELETE(
     if (dbError) {
       console.error('Database deletion error:', dbError);
       return NextResponse.json({ error: 'Failed to delete file metadata from database' }, { status: 500 });
+    }
+
+    const { count, error: countError } = await supabase
+      .from('event_files')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+
+    if (countError) {
+      console.error('Error counting remaining files for event:', countError);
+      return NextResponse.json({ message: 'File deleted successfully, but failed to verify remaining files' });
+    }
+
+    if (!count || count === 0) {
+      const { error: timelineDeleteError } = await supabase
+        .from('event_timelines')
+        .delete()
+        .eq('event_id', eventId);
+
+      if (timelineDeleteError) {
+        console.error('Failed to delete cached timeline after last file removal:', timelineDeleteError);
+        return NextResponse.json({ message: 'File deleted, but failed to clear cached timeline' });
+      }
+
+      return NextResponse.json({ message: 'File and cached timeline deleted successfully' });
     }
 
     return NextResponse.json({ message: 'File deleted successfully' });

@@ -3,12 +3,10 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Clock, Music, Users, DoorOpen, Loader2, AlertCircle, Calendar, ChevronDown, ChevronUp } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEvents } from "@/hooks/use-events"
 import { get } from "@/lib/api"
-import { useTimelineStore, TimelineData } from '@/lib/timelineStore'
-import { useOnlineStatus } from '@/hooks/use-online-status'
+import { useOnlineStatus } from "@/hooks/use-online-status"
 
 const getIconForType = (category: string) => {
   const cat = category.toLowerCase()
@@ -19,16 +17,23 @@ const getIconForType = (category: string) => {
   return Clock
 }
 
+// Tipo que refleja exactamente la respuesta del endpoint de cache
+type TimelineApiResponse = {
+  event_id: string
+  timeline: {
+    timelines: { category: string; items: { label: string; date: string }[] }[]
+  }
+  updated_at: string
+}
+
 export default function TimelinePage() {
   const { events, loading: eventsLoading } = useEvents()
   const [selectedEventId, setSelectedEventId] = useState<string>('')
-  const { timelineByEvent, setTimeline } = useTimelineStore()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const isOnline = useOnlineStatus()
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set())
-
-  const timelineData = timelineByEvent[selectedEventId]
+  const [timelineData, setTimelineData] = useState<TimelineApiResponse["timeline"] | null>(null)
 
   useEffect(() => {
     if (events.length > 0 && !selectedEventId) {
@@ -42,22 +47,14 @@ export default function TimelinePage() {
     setLoading(true)
     setError('')
     try {
-      const response = await get<{ timelines: { category: string; items: { label: string; date: string }[] }[] }>(
-        `/api/events/${eventId}/timeline`
+      const response = await get<TimelineApiResponse>(
+        `/api/events/${eventId}/timeline/cache`
       )
 
-      const normalized: TimelineData = {
-        timeline: response.timelines.map((group) => ({
-          category: group.category,
-          events: group.items.map((item) => ({
-            label: item.label,
-            datetime: item.date,
-          })),
-        })),
-      }
-
-      setTimeline(eventId, normalized)
+      // Guardamos directamente la estructura que viene del backend
+      setTimelineData(response.timeline)
     } catch (err) {
+      setTimelineData(null)
       setError(err instanceof Error ? err.message : 'Error al cargar timeline')
     } finally {
       setLoading(false)
@@ -70,10 +67,12 @@ export default function TimelinePage() {
     }
   }, [selectedEventId, isOnline])
 
-  // Initialize all categories as expanded when timeline data changes
+  // Inicializar todas las categorías como expandidas cuando cambia el timeline
   useEffect(() => {
-    if (timelineData?.timeline) {
-      setExpandedCategories(new Set(timelineData.timeline.map((_, index) => index)))
+    if (timelineData?.timelines) {
+      setExpandedCategories(new Set(timelineData.timelines.map((_, index) => index)))
+    } else {
+      setExpandedCategories(new Set())
     }
   }, [timelineData])
 
@@ -140,18 +139,11 @@ export default function TimelinePage() {
             </div>
           )}
 
-          {error && (
-            <div className="flex items-center gap-2 p-4 mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
-
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
-          ) : !timelineData ? (
+          ) : !timelineData || !timelineData.timelines || timelineData.timelines.length === 0 ? (
             <Card className="border-slate-200 dark:border-zinc-800">
               <CardContent className="p-8 text-center">
                 <Calendar className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
@@ -165,10 +157,10 @@ export default function TimelinePage() {
             </Card>
           ) : (
             <div className="space-y-10">
-              {timelineData.timeline.map((category, catIndex) => {
+              {timelineData.timelines.map((category, catIndex) => {
                 const isExpanded = expandedCategories.has(catIndex)
                 const Icon = getIconForType(category.category)
-                
+
                 return (
                   <div key={catIndex}>
                     <button
@@ -187,7 +179,7 @@ export default function TimelinePage() {
                     </button>
                     {isExpanded && (
                       <div className="relative pl-8 space-y-8 before:absolute before:inset-0 before:ml-[14px] before:h-full before:w-0.5 before:bg-gray-200 dark:before:bg-zinc-800 transition-all duration-300">
-                        {category.events.map((entry, entryIndex) => {
+                        {category.items.map((entry, entryIndex) => {
                           return (
                             <div key={entryIndex} className="relative">
                               {/* Dot on timeline */}
@@ -198,7 +190,7 @@ export default function TimelinePage() {
                                   {/* Time & Icon Box */}
                                   <div className="shrink-0 flex flex-col items-center justify-center w-24 h-16 rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-800">
                                     <span className="font-bold text-black dark:text-white text-center text-xs leading-tight">
-                                      {formatTime(entry.datetime)}
+                                      {formatTime(entry.date)}
                                     </span>
                                   </div>
 
