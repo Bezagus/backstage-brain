@@ -60,14 +60,83 @@ export function useChat(eventId: string | null): UseChatReturn {
     }
 
     try {
-      const response = await post<{
-        userMessage: ChatMessage
-        assistantMessage: ChatMessage
-        response: string
-      }>(`/api/events/${eventId}/chat`, { message })
+      const response = await fetch(`/api/events/${eventId}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ message })
+      })
 
-      // Add both messages to state
-      setMessages((prev) => [...prev, response.userMessage, response.assistantMessage])
+      if (!response.ok) {
+        throw new Error('Failed to send message')
+      }
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No response stream')
+      }
+
+      let assistantMessageContent = ''
+      let assistantMessageId = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6))
+
+            if (data.type === 'user_message') {
+              // Add user message immediately
+              setMessages((prev) => [...prev, data.message])
+            } else if (data.type === 'chunk') {
+              // Accumulate assistant message chunks
+              assistantMessageContent += data.text
+
+              // Update or add assistant message in real-time
+              setMessages((prev) => {
+                const lastMessage = prev[prev.length - 1]
+                if (lastMessage?.role === 'assistant' && !assistantMessageId) {
+                  // Update existing streaming message
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...lastMessage, content: assistantMessageContent }
+                  ]
+                } else {
+                  // Add new streaming message
+                  return [
+                    ...prev,
+                    {
+                      id: 'streaming',
+                      user_id: session.user.id,
+                      role: 'assistant' as const,
+                      content: assistantMessageContent,
+                      source_file_id: null,
+                      source_document_name: null,
+                      created_at: new Date().toISOString()
+                    }
+                  ]
+                }
+              })
+            } else if (data.type === 'done') {
+              // Replace streaming message with final message
+              assistantMessageId = data.message.id
+              setMessages((prev) => {
+                const withoutStreaming = prev.filter(m => m.id !== 'streaming')
+                return [...withoutStreaming, data.message]
+              })
+            }
+          }
+        }
+      }
     } catch (err) {
       // Only log error if it's not an auth issue
       if (err instanceof Error && !err.message.includes('Auth session')) {

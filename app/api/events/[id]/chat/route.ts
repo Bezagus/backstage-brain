@@ -23,20 +23,6 @@ const model = genAI.getGenerativeModel({
     systemInstruction: systemInstruction
 });
 
-async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {
-    const reader = stream.getReader();
-    const decoder = new TextDecoder();
-    let result = '';
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-            break;
-        }
-        result += decoder.decode(value, { stream: true });
-    }
-    return result;
-}
-
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -133,10 +119,10 @@ export async function POST(
             return NextResponse.json({ error: 'Message is required' }, { status: 400 });
         }
 
-        // 3. Get event files
+        // 3. Get event files with cached content
         const { data: files, error: dbError } = await supabase
             .from('event_files')
-            .select('id, file_path, file_name')
+            .select('id, file_name, file_content')
             .eq('event_id', eventId);
 
         if (dbError) {
@@ -148,7 +134,7 @@ export async function POST(
             return NextResponse.json({ response: "I couldn't find any documents for this event. Please upload some files first." });
         }
 
-        // 4. Build context from files
+        // 4. Build context from cached file content
         let context = '';
         let firstFileId: string | null = null;
         let firstFileName: string | null = null;
@@ -159,39 +145,18 @@ export async function POST(
                 firstFileName = file.file_name;
             }
 
-            const { data: blob, error: downloadError } = await supabase.storage
-                .from('event-files')
-                .download(file.file_path);
-
-            if (downloadError) {
-                console.error(`Failed to download ${file.file_name}:`, downloadError);
-                continue;
-            }
-
-            if (blob) {
-                const fileContent = await streamToString(blob.stream());
-                context += `\n\n--- Content from ${file.file_name} ---\n${fileContent}`;
+            if (file.file_content) {
+                context += `\n\n--- Content from ${file.file_name} ---\n${file.file_content}`;
+            } else {
+                console.warn(`File ${file.file_name} has no cached content`);
             }
         }
 
         if (!context) {
-            return NextResponse.json({ error: 'Could not read content from any of the event files.' }, { status: 500 });
+            return NextResponse.json({ error: 'Could not read content from any of the event files. Please re-upload your files.' }, { status: 500 });
         }
 
-        // 5. Generate AI response
-        const prompt = `
-    CONTEXTO DEL EVENTO:
-    ${context}
-
-    PREGUNTA DEL USUARIO:
-    ${message}
-    `;
-
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-
-        // 6. Save user message to database
+        // 5. Save user message to database first
         const { data: userMessage, error: userMessageError } = await supabase
             .from('chat_messages')
             .insert({
@@ -206,28 +171,9 @@ export async function POST(
 
         if (userMessageError) {
             console.error('Error saving user message:', userMessageError);
-            // Continue even if saving fails
         }
 
-        // 7. Save assistant message to database
-        const { data: assistantMessage, error: assistantMessageError } = await supabase
-            .from('chat_messages')
-            .insert({
-                user_id: user.id,
-                role: 'assistant',
-                content: text,
-                source_file_id: firstFileId,
-                source_document_name: firstFileName
-            })
-            .select()
-            .single();
-
-        if (assistantMessageError) {
-            console.error('Error saving assistant message:', assistantMessageError);
-            // Continue even if saving fails
-        }
-
-        // 8. Format user message response
+        // 6. Format user message response
         const userMessageResponse: ChatMessage = userMessage ? {
             id: userMessage.id,
             user_id: userMessage.user_id,
@@ -248,31 +194,94 @@ export async function POST(
             created_at: new Date().toISOString()
         };
 
-        // 9. Format assistant message response
-        const assistantMessageResponse: ChatMessage = assistantMessage ? {
-            id: assistantMessage.id,
-            user_id: assistantMessage.user_id,
-            role: assistantMessage.role,
-            content: assistantMessage.content,
-            source_file_id: assistantMessage.source_file_id,
-            source_document_name: assistantMessage.source_document_name,
-            created_at: assistantMessage.created_at,
-            file_id: assistantMessage.source_file_id || undefined,
-            event_files: assistantMessage.source_document_name ? { file_name: assistantMessage.source_document_name } : undefined
-        } : {
-            id: '',
-            user_id: user.id,
-            role: 'assistant',
-            content: text,
-            source_file_id: firstFileId,
-            source_document_name: firstFileName,
-            created_at: new Date().toISOString()
-        };
+        // 7. Generate AI response with streaming
+        const prompt = `
+    CONTEXTO DEL EVENTO:
+    ${context}
 
-        return NextResponse.json({
-            userMessage: userMessageResponse,
-            assistantMessage: assistantMessageResponse,
-            response: text
+    PREGUNTA DEL USUARIO:
+    ${message}
+    `;
+
+        const result = await model.generateContentStream(prompt);
+
+        // Create a streaming response
+        const encoder = new TextEncoder();
+        let fullText = '';
+
+        const stream = new ReadableStream({
+            async start(controller) {
+                try {
+                    // Send user message first
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                        type: 'user_message',
+                        message: userMessageResponse
+                    })}\n\n`));
+
+                    // Stream AI response
+                    for await (const chunk of result.stream) {
+                        const chunkText = chunk.text();
+                        fullText += chunkText;
+
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                            type: 'chunk',
+                            text: chunkText
+                        })}\n\n`));
+                    }
+
+                    // Save assistant message to database
+                    const { data: assistantMessage } = await supabase
+                        .from('chat_messages')
+                        .insert({
+                            user_id: user.id,
+                            role: 'assistant',
+                            content: fullText,
+                            source_file_id: firstFileId,
+                            source_document_name: firstFileName
+                        })
+                        .select()
+                        .single();
+
+                    // Send complete assistant message
+                    const assistantMessageResponse: ChatMessage = assistantMessage ? {
+                        id: assistantMessage.id,
+                        user_id: assistantMessage.user_id,
+                        role: assistantMessage.role,
+                        content: assistantMessage.content,
+                        source_file_id: assistantMessage.source_file_id,
+                        source_document_name: assistantMessage.source_document_name,
+                        created_at: assistantMessage.created_at,
+                        file_id: assistantMessage.source_file_id || undefined,
+                        event_files: assistantMessage.source_document_name ? { file_name: assistantMessage.source_document_name } : undefined
+                    } : {
+                        id: '',
+                        user_id: user.id,
+                        role: 'assistant',
+                        content: fullText,
+                        source_file_id: firstFileId,
+                        source_document_name: firstFileName,
+                        created_at: new Date().toISOString()
+                    };
+
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                        type: 'done',
+                        message: assistantMessageResponse
+                    })}\n\n`));
+
+                    controller.close();
+                } catch (error) {
+                    console.error('Streaming error:', error);
+                    controller.error(error);
+                }
+            }
+        });
+
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
         });
     } catch (error) {
         console.error('Chat API error:', error);

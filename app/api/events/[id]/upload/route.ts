@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, checkEventAccess, hasPermission } from '@/lib/auth';
+import pdf from 'pdf-parse';
+
+/**
+ * Extract text content from file based on type
+ */
+async function extractFileContent(file: File, fileData: Uint8Array): Promise<string | null> {
+  try {
+    if (file.type === 'text/plain') {
+      const text = new TextDecoder('utf-8').decode(fileData);
+      return text;
+    } else if (file.type === 'application/pdf') {
+      const data = await pdf(Buffer.from(fileData));
+      return data.text;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error extracting file content:', error);
+    return null;
+  }
+}
 
 export async function POST(
   req: NextRequest,
@@ -57,6 +77,9 @@ export async function POST(
     const arrayBuffer = await file.arrayBuffer();
     const fileData = new Uint8Array(arrayBuffer);
 
+    // Extract file content for caching
+    const fileContent = await extractFileContent(file, fileData);
+
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(filePath, fileData, {
@@ -67,9 +90,9 @@ export async function POST(
 
     if (uploadError) {
       console.error('Supabase upload error:', uploadError);
-      return NextResponse.json({ 
-        error: 'Failed to upload file to storage', 
-        details: uploadError 
+      return NextResponse.json({
+        error: 'Failed to upload file to storage',
+        details: uploadError
       }, { status: 500 });
     }
 
@@ -82,7 +105,8 @@ export async function POST(
         file_size: file.size,
         file_type: file.type,
         category_id: categoryData.id,
-        uploaded_by: user.id
+        uploaded_by: user.id,
+        file_content: fileContent
       })
       .select()
       .single();
