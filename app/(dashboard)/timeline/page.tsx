@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Clock, Music, Users, DoorOpen,  Loader2, AlertCircle, Calendar } from "lucide-react"
+import { Clock, Music, Users, DoorOpen, Loader2, AlertCircle, Calendar, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEvents } from "@/hooks/use-events"
@@ -19,24 +19,6 @@ const getIconForType = (category: string) => {
   return Clock
 }
 
-const getTypeColor = (category: string) => {
-    const cat = category.toLowerCase()
-    if (cat.includes('técnico')) return 'bg-blue-100 text-blue-600 border-blue-200'
-    if (cat.includes('escenario')) return 'bg-purple-100 text-purple-600 border-purple-200'
-    if (cat.includes('catering')) return 'bg-amber-100 text-amber-600 border-amber-200'
-    if (cat.includes('general')) return 'bg-gray-100 text-gray-600 border-gray-200'
-    return 'bg-gray-100 text-gray-600 border-gray-200'
-}
-
-const getTypeDot = (category: string) => {
-    const cat = category.toLowerCase()
-    if (cat.includes('técnico')) return 'bg-blue-500'
-    if (cat.includes('escenario')) return 'bg-purple-500'
-    if (cat.includes('catering')) return 'bg-amber-500'
-    if (cat.includes('general')) return 'bg-gray-500'
-    return 'bg-gray-500'
-}
-
 export default function TimelinePage() {
   const { events, loading: eventsLoading } = useEvents()
   const [selectedEventId, setSelectedEventId] = useState<string>('')
@@ -44,6 +26,7 @@ export default function TimelinePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const isOnline = useOnlineStatus()
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set())
 
   const timelineData = timelineByEvent[selectedEventId]
 
@@ -87,9 +70,27 @@ export default function TimelinePage() {
     }
   }, [selectedEventId, isOnline])
 
+  // Initialize all categories as expanded when timeline data changes
+  useEffect(() => {
+    if (timelineData?.timeline) {
+      setExpandedCategories(new Set(timelineData.timeline.map((_, index) => index)))
+    }
+  }, [timelineData])
+
+  const toggleCategory = (index: number) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+      }
+      return newSet
+    })
+  }
+
   const formatTime = (datetime: string) => {
-    const parts = datetime.split(' - ')
-    return parts.length > 1 ? parts[1] : datetime
+    return datetime
   }
 
   const selectedEvent = events.find(e => e.id === selectedEventId)
@@ -164,49 +165,61 @@ export default function TimelinePage() {
             </Card>
           ) : (
             <div className="space-y-10">
-              {timelineData.timeline.map((category, catIndex) => (
-                <div key={catIndex}>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-3">
-                     <div className={cn("w-3 h-3 rounded-full", getTypeDot(category.category))} />
-                    {category.category}
-                  </h2>
-                  <div className="relative pl-8 space-y-8 before:absolute before:inset-0 before:ml-3.5 before:h-full before:w-0.5 before:bg-gray-200 dark:before:bg-zinc-800">
-                    {category.events.map((entry, entryIndex) => {
-                      const Icon = getIconForType(category.category)
-                      return (
-                        <div key={entryIndex} className="relative">
-                          {/* Dot on timeline */}
-                          <div className={cn(
-                            "absolute -left-[34px] mt-1.5 h-4 w-4 rounded-full border-4 border-white dark:border-zinc-950 shadow-sm",
-                            getTypeDot(category.category)
-                          )} />
+              {timelineData.timeline.map((category, catIndex) => {
+                const isExpanded = expandedCategories.has(catIndex)
+                const Icon = getIconForType(category.category)
+                
+                return (
+                  <div key={catIndex}>
+                    <button
+                      onClick={() => toggleCategory(catIndex)}
+                      className="w-full text-left mb-4 flex items-center gap-3 hover:opacity-80 transition-opacity"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-black dark:bg-white" />
+                      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex-1">
+                        {category.category}
+                      </h2>
+                      {isExpanded ? (
+                        <ChevronUp className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                      )}
+                    </button>
+                    {isExpanded && (
+                      <div className="relative pl-8 space-y-8 before:absolute before:inset-0 before:ml-[14px] before:h-full before:w-0.5 before:bg-gray-200 dark:before:bg-zinc-800 transition-all duration-300">
+                        {category.events.map((entry, entryIndex) => {
+                          return (
+                            <div key={entryIndex} className="relative">
+                              {/* Dot on timeline */}
+                              <div className="absolute -left-[26px] top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border-4 border-white dark:border-zinc-950 shadow-sm bg-black dark:bg-white" />
 
-                          <Card className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-zinc-800">
-                            <CardContent className="p-5 flex gap-4 items-center">
-                              {/* Time & Icon Box */}
-                              <div className={cn(
-                                "flex-shrink-0 flex flex-col items-center justify-center w-24 h-16 rounded-2xl border",
-                                getTypeColor(category.category)
-                              )}>
-                                <span className="font-bold text-lg">{formatTime(entry.datetime)}</span>
-                              </div>
+                              <Card className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-zinc-800">
+                                <CardContent className="p-5 flex gap-4 items-center">
+                                  {/* Time & Icon Box */}
+                                  <div className="shrink-0 flex flex-col items-center justify-center w-24 h-16 rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-800">
+                                    <span className="font-bold text-black dark:text-white text-center text-xs leading-tight">
+                                      {formatTime(entry.datetime)}
+                                    </span>
+                                  </div>
 
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">
-                                  {entry.label}
-                                </h3>
-                              </div>
-                              <div className={cn("p-2 rounded-full", getTypeColor(category.category))}>
-                                <Icon className="h-5 w-5" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      )
-                    })}
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">
+                                      {entry.label}
+                                    </h3>
+                                  </div>
+                                  <div className="p-2 rounded-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-800">
+                                    <Icon className="h-5 w-5 text-black dark:text-white" />
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </>
