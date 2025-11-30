@@ -11,9 +11,13 @@ async function extractFileContent(file: File, fileData: Uint8Array): Promise<str
       const text = new TextDecoder('utf-8').decode(fileData);
       return text;
     } else if (file.type === 'application/pdf') {
-      // Dynamic import for pdf-parse (CommonJS module)
-      const pdfParse = await import('pdf-parse');
-      const data = await pdfParse(Buffer.from(fileData));
+      // Dynamic import for pdf-parse
+      const { PDFParse } = await import('pdf-parse');
+      const parser = new PDFParse({ data: Buffer.from(fileData) });
+      const data = await parser.getText();
+      if (parser.destroy) {
+        await parser.destroy();
+      }
       return data.text;
     }
     return null;
