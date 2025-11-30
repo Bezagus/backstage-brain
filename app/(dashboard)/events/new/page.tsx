@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CalendarPlus, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Tag, FileText } from 'lucide-react'
+import { CalendarPlus, Loader2, CheckCircle2, AlertCircle, Tag, FileText } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,7 +86,7 @@ export default function NewEventPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
+      <div>
         <div>
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <CalendarPlus className="h-4 w-4" />
@@ -100,13 +99,6 @@ export default function NewEventPage() {
             Registra un nuevo evento para habilitar el centro de carga y la línea de tiempo.
           </p>
         </div>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-slate-900 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver al dashboard
-        </Link>
       </div>
 
       <Card className="border-slate-200 dark:border-zinc-800 shadow-lg">

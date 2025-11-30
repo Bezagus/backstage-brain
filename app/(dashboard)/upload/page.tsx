@@ -200,18 +200,11 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex justify-between items-end">
+      <div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Centro de Carga</h1>
             <p className="text-muted-foreground mt-1">Gestiona y organiza todos los archivos de tu evento.</p>
           </div>
-          <Button onClick={() => fileInputRef.current?.click()} disabled={!selectedEventId || uploading}>
-            {uploading ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Subiendo...</>
-            ) : (
-              <><CloudUpload className="mr-2 h-4 w-4" /> Subir Nuevo</>
-            )}
-          </Button>
           <input
             ref={fileInputRef}
             type="file"
