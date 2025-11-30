@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { MessageSquare, Upload, Calendar, FileText, Bell, Star, ArrowUpRight, Loader2 } from "lucide-react"
+import { MessageSquare, Upload, Calendar, FileText, Star, ArrowUpRight, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
@@ -35,10 +35,6 @@ export default function Home() {
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Bienvenido a Backstage Brain</h1>
             <p className="text-muted-foreground mt-1">Resumen general de tu evento y accesos rápidos.</p>
         </div>
-        <Button variant="outline" className="hidden md:flex gap-2">
-            <Bell className="h-4 w-4" />
-            Notificaciones
-        </Button>
       </div>
       
       {/* Event Summary Card */}

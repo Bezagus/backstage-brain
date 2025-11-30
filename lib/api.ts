@@ -51,6 +51,59 @@ export async function post<T>(url: string, body: unknown): Promise<T> {
   return response.json()
 }
 
+export async function put<T>(url: string, body: unknown): Promise<T> {
+  const headers = await getAuthHeaders()
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(error.error || `HTTP ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export async function del<T = { success: boolean }>(url: string): Promise<T> {
+  const headers = await getAuthHeaders()
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(error.error || `HTTP ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export async function delWithBody<T = { success: boolean }>(
+  url: string,
+  body: unknown
+): Promise<T> {
+  const headers = await getAuthHeaders()
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers,
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(error.error || `HTTP ${response.status}`)
+  }
+
+  return response.json()
+}
+
 export async function postFormData<T>(url: string, formData: FormData): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession()
 

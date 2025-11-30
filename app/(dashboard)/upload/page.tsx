@@ -5,11 +5,21 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CloudUpload, FileText, Image as ImageIcon, File, FileSpreadsheet, Loader2, AlertCircle } from "lucide-react"
+import { CloudUpload, FileText, Image as ImageIcon, File, FileSpreadsheet, Loader2, AlertCircle, Trash2 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useEvents } from "@/hooks/use-events"
-import { get, postFormData } from "@/lib/api"
+import { get, postFormData, delWithBody } from "@/lib/api"
 import type { EventFile } from "@/lib/types"
 
 const categories = ["Horarios", "Técnica", "Legales", "Personal", "Marketing"]
@@ -40,6 +50,8 @@ export default function UploadPage() {
   const [files, setFiles] = useState<EventFile[]>([])
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null)
+  const [fileToDelete, setFileToDelete] = useState<EventFile | null>(null)
   const [error, setError] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('Horarios')
   const [isDragging, setIsDragging] = useState(false)
@@ -109,6 +121,37 @@ export default function UploadPage() {
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleDeleteClick = (file: EventFile) => {
+    setFileToDelete(file)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!fileToDelete || !selectedEventId) return
+
+    setDeletingFileId(fileToDelete.id)
+    setFileToDelete(null) // Cerrar diálogo
+    setError('')
+
+    try {
+      await delWithBody(`/api/events/${selectedEventId}/upload`, {
+        fileId: fileToDelete.id
+      })
+
+      // Refresh file list
+      await fetchFiles()
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar archivo')
+      console.error('Delete error:', err)
+    } finally {
+      setDeletingFileId(null)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setFileToDelete(null)
   }
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
@@ -283,7 +326,7 @@ export default function UploadPage() {
           <div className="md:col-span-2">
              <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center">
-                    <h3 className="font-semibold text-lg">Archivos Recientes</h3>
+                    <h3 className="font-semibold text-lg">Archivos subidos</h3>
                     <span className="text-xs text-muted-foreground">Total: {files.length} archivos</span>
                 </div>
                 <ScrollArea className="h-[500px]">
@@ -324,8 +367,21 @@ export default function UploadPage() {
                                   {file.category}
                               </Badge>
 
-                              <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600">
-                                  <FileText className="h-4 w-4" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 disabled:opacity-100 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteClick(file)
+                                }}
+                                disabled={deletingFileId === file.id}
+                              >
+                                {deletingFileId === file.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
                               </Button>
                           </div>
                         ))}
@@ -335,6 +391,30 @@ export default function UploadPage() {
              </div>
           </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!fileToDelete} onOpenChange={(open) => !open && handleDeleteCancel()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar archivo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que quieres eliminar "{fileToDelete?.file_name}"?
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
