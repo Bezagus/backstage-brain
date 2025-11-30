@@ -46,7 +46,7 @@ export default function Home() {
         <CardHeader className="border-b border-slate-100 dark:border-zinc-800 bg-white/50 dark:bg-white/5 backdrop-blur-sm">
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-black fill-black" />
-            Resumen del evento
+            Resumen 
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6 p-6 md:grid-cols-3">

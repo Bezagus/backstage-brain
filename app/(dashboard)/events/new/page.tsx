@@ -136,32 +136,30 @@ export default function NewEventPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <label htmlFor="event-date" className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Fecha y hora
-                </label>
-                <DateTimePicker
-                  value={form.date}
-                  onChange={handleDateChange}
-                  disabled={submitting}
-                  placeholder="Selecciona fecha y hora"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                Fecha y hora
+              </label>
+              <DateTimePicker
+                value={form.date}
+                onChange={handleDateChange}
+                disabled={submitting}
+                placeholder="Selecciona fecha y hora"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <label htmlFor="event-location" className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Ubicación
-                </label>
-                <Input
-                  id="event-location"
-                  placeholder="Ciudad, recinto, dirección"
-                  value={form.location}
-                  onChange={handleChange('location')}
-                  disabled={submitting}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <label htmlFor="event-location" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                Ubicación
+              </label>
+              <Input
+                id="event-location"
+                placeholder="Ciudad, recinto, dirección"
+                value={form.location}
+                onChange={handleChange('location')}
+                disabled={submitting}
+                required
+              />
             </div>
 
             <div className="space-y-2">
