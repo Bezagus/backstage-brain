@@ -9,7 +9,7 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.access_token) {
-    throw new Error('No authentication token available')
+    throw new Error('Auth session missing')
   }
 
   return {

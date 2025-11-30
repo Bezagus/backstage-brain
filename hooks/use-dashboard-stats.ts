@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { get } from '@/lib/api'
+import { supabase } from '@/lib/api'
 
 export interface DashboardStats {
   totalFiles: number
@@ -26,11 +27,22 @@ export function useDashboardStats(): UseDashboardStatsReturn {
     try {
       setLoading(true)
       setError(null)
+
+      // Check if user is authenticated before making API call
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setLoading(false)
+        return
+      }
+
       const response = await get<DashboardStats>('/api/dashboard/stats')
       setStats(response)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch stats')
-      console.error('Error fetching dashboard stats:', err)
+      // Only log error if it's not an auth issue
+      if (err instanceof Error && !err.message.includes('Auth session')) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch stats')
+        console.error('Error fetching dashboard stats:', err)
+      }
     } finally {
       setLoading(false)
     }

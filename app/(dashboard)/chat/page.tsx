@@ -43,7 +43,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
+    <div className="flex flex-col h-full max-w-4xl mx-auto min-h-0">
       {/* Event Selection */}
       {eventsLoading ? (
         <div className="flex items-center justify-center py-8 mb-4">
@@ -88,7 +88,7 @@ export default function ChatPage() {
       )}
 
       {selectedEventId && (
-        <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
+        <div className="flex flex-col flex-1 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 min-h-0">
           {/* Header */}
           <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm z-10">
             <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-900/30 flex items-center justify-center text-black dark:text-gray-300">
@@ -104,7 +104,7 @@ export default function ChatPage() {
           </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-6 bg-slate-50/50 dark:bg-zinc-950/50">
+      <ScrollArea className="flex-1 h-0 p-6 bg-slate-50/50 dark:bg-zinc-950/50">
         {loading && messages.length === 0 && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
@@ -175,7 +175,7 @@ export default function ChatPage() {
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="p-4 bg-white dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800">
+      <div className="relative z-10 flex-shrink-0 p-4 bg-white dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800">
         <div className="relative flex items-center max-w-3xl mx-auto">
           <Input
             placeholder="Preguntá lo que necesites sobre el evento..."

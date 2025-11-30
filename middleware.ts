@@ -64,7 +64,8 @@ export async function middleware(req: NextRequest) {
       req.nextUrl.pathname.startsWith('/chat') ||
       req.nextUrl.pathname.startsWith('/upload') ||
       req.nextUrl.pathname.startsWith('/timeline') ||
-      req.nextUrl.pathname.startsWith('/events')) {
+      req.nextUrl.pathname.startsWith('/events') ||
+      req.nextUrl.pathname.startsWith('/welcome')) {
     if (!session) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
@@ -88,6 +89,7 @@ export const config = {
     '/upload/:path*',
     '/timeline/:path*',
     '/events/:path*',
+    '/welcome/:path*',
     '/login',
     '/signup',
   ],

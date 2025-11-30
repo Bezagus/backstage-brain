@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -47,7 +47,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error
     }
 
-    router.push('/dashboard')
+    // Check if user has events
+    if (data.user) {
+      const { count } = await supabase
+        .from('event_users')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', data.user.id)
+
+      if (count && count > 0) {
+        router.push('/welcome')
+      } else {
+        router.push('/dashboard')
+      }
+    } else {
+      router.push('/dashboard')
+    }
+    
     router.refresh()
   }
 

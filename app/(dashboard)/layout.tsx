@@ -16,7 +16,7 @@ export default function DashboardLayout({
             <SidebarTrigger />
             <h1 className="font-semibold text-lg text-slate-800">Dashboard</h1>
         </div>
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 p-6 overflow-auto">
             {children}
         </div>
       </main>

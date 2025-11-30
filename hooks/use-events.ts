@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { get } from '@/lib/api'
+import { get, supabase } from '@/lib/api'
 import { Event, UserRole } from '@/lib/types'
 
 interface EventWithRole extends Event {
@@ -24,11 +24,22 @@ export function useEvents(): UseEventsReturn {
     try {
       setLoading(true)
       setError(null)
+
+      // Check if user is authenticated before making API call
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setLoading(false)
+        return
+      }
+
       const response = await get<{ events: EventWithRole[] }>('/api/events')
       setEvents(response.events)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch events')
-      console.error('Error fetching events:', err)
+      // Only log error if it's not an auth issue
+      if (err instanceof Error && !err.message.includes('Auth session')) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch events')
+        console.error('Error fetching events:', err)
+      }
     } finally {
       setLoading(false)
     }
@@ -62,11 +73,22 @@ export function useEvent(eventId: string): UseEventReturn {
     try {
       setLoading(true)
       setError(null)
+
+      // Check if user is authenticated before making API call
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setLoading(false)
+        return
+      }
+
       const response = await get<{ event: EventWithRole }>(`/api/events/${eventId}`)
       setEvent(response.event)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch event')
-      console.error('Error fetching event:', err)
+      // Only log error if it's not an auth issue
+      if (err instanceof Error && !err.message.includes('Auth session')) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch event')
+        console.error('Error fetching event:', err)
+      }
     } finally {
       setLoading(false)
     }

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Star, Zap, Shield, Globe, Upload, MessageSquare, Calendar, User2, Search, Bell, Menu } from "lucide-react"
+import { ArrowRight, Star, Zap, Shield, Globe, Upload, MessageSquare, Calendar, User2, Search, Bell, Menu, Brain } from "lucide-react"
 import { motion, Variants } from "framer-motion"
 
 export default function LandingPage() {
@@ -80,13 +80,10 @@ export default function LandingPage() {
             </motion.p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link href="/signup">
-                <Button size="lg" className="h-12 px-8 rounded-full text-base bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200">
+                <Button size="lg" className="h-16 px-12 rounded-full text-lg bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200">
                   Probar gratis
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="h-12 px-8 rounded-full text-base border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800">
-                Ver demo
-              </Button>
             </div>
           </motion.div>
 
@@ -177,46 +174,64 @@ export default function LandingPage() {
                                 {/* Header Text */}
                                 <div className="flex justify-between items-end">
                                     <div>
-                                        <div className="h-6 w-48 bg-slate-900 dark:bg-white rounded-md mb-2"></div>
-                                        <div className="h-4 w-64 bg-slate-200 dark:bg-zinc-800 rounded-md"></div>
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Bienvenido a Backstage Brain</h2>
+                                        <p className="text-slate-500 dark:text-slate-400 mt-1">Resumen general de tu evento y accesos rápidos.</p>
                                     </div>
-                                    <div className="h-9 w-24 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md"></div>
+                                    <div className="hidden sm:flex px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md text-xs font-medium items-center gap-2 shadow-sm">
+                                        <Bell className="h-3.5 w-3.5 text-slate-500" />
+                                        <span>Notificaciones</span>
+                                    </div>
                                 </div>
 
                                 {/* Summary Card */}
                                 <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
                                     <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-100 dark:border-zinc-800">
                                         <Star className="h-5 w-5 text-slate-900 dark:text-white" />
-                                        <div className="h-5 w-32 bg-slate-900 dark:bg-white rounded-md"></div>
+                                        <span className="font-semibold text-slate-900 dark:text-white">Resumen del evento</span>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {[1, 2, 3].map((i) => (
-                                            <div key={i} className="p-4 rounded-lg bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800">
-                                                <div className="h-3 w-20 bg-slate-400 dark:bg-zinc-600 rounded mb-3"></div>
-                                                <div className="h-8 w-12 bg-slate-900 dark:bg-white rounded"></div>
+                                        <div className="p-4 rounded-lg bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800">
+                                            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Archivos subidos</div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-bold text-slate-900 dark:text-white">124</span>
+                                                <span className="text-xs text-green-600 dark:text-green-400">+12 hoy</span>
                                             </div>
-                                        ))}
+                                        </div>
+                                        <div className="p-4 rounded-lg bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800">
+                                            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Última actualización</div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-xl font-bold text-slate-900 dark:text-white">Hace 5m</span>
+                                                <span className="text-xs text-slate-500">Por Juan P.</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-4 rounded-lg bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800">
+                                            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Próximos shows</div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-bold text-slate-900 dark:text-white">2</span>
+                                                <span className="text-xs text-slate-500 underline cursor-pointer">Ver agenda</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Quick Access Grid */}
-                                <div className="h-4 w-32 bg-slate-900 dark:bg-white rounded-md mt-8 mb-4"></div>
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mt-8 mb-4">Accesos Rápidos</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {[
-                                        { icon: Upload, label: "Subir Archivos" },
-                                        { icon: MessageSquare, label: "Chat AI" },
-                                        { icon: Calendar, label: "Timeline" }
+                                        { icon: Upload, label: "Subir Archivos", desc: "Gestiona y comparte documentos." },
+                                        { icon: MessageSquare, label: "Chat AI", desc: "Asistente técnico 24/7." },
+                                        { icon: Calendar, label: "Timeline", desc: "Visualización en tiempo real." }
                                     ].map((item, i) => (
-                                        <div key={i} className="h-40 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col justify-between hover:border-slate-400 transition-colors cursor-pointer group">
+                                        <div key={i} className="h-32 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 flex flex-col justify-between hover:border-slate-400 transition-colors cursor-pointer group">
                                             <div className="flex justify-between items-start">
                                                 <div className="p-2 bg-slate-100 dark:bg-zinc-800 rounded-lg text-slate-900 dark:text-white group-hover:scale-110 transition-transform">
                                                     <item.icon className="h-5 w-5" />
                                                 </div>
                                                 <ArrowRight className="h-4 w-4 text-slate-300" />
                                             </div>
-                                            <div className="space-y-2">
-                                                <div className="h-5 w-24 bg-slate-900 dark:bg-white rounded"></div>
-                                                <div className="h-3 w-full bg-slate-200 dark:bg-zinc-800 rounded"></div>
+                                            <div>
+                                                <div className="font-semibold text-sm text-slate-900 dark:text-white">{item.label}</div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400">{item.desc}</div>
                                             </div>
                                         </div>
                                     ))}
@@ -250,26 +265,71 @@ export default function LandingPage() {
                     viewport={{ once: true }}
                     className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
                 >
-                    <motion.div variants={itemVariants} className="bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-900 rounded-xl flex items-center justify-center text-slate-900 dark:text-white mb-6">
-                            <Star className="h-6 w-6" />
+                    <motion.div variants={itemVariants} className="group relative overflow-hidden bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Gestión Centralizada</h3>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Accede a todos tus documentos, contratos y riders técnicos desde un solo lugar, seguro y organizado.</p>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Gestión Centralizada</h3>
-                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Accede a todos tus documentos, contratos y riders técnicos desde un solo lugar, seguro y organizado.</p>
+                        <img 
+                            src="/images/features/management.svg" 
+                            alt="Gestión Centralizada" 
+                            className="absolute -bottom-8 -right-8 w-48 h-48 opacity-5 dark:opacity-10 group-hover:scale-110 transition-transform duration-500 pointer-events-none grayscale" 
+                        />
                     </motion.div>
-                    <motion.div variants={itemVariants} className="bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-900 rounded-xl flex items-center justify-center text-slate-900 dark:text-white mb-6">
-                            <Shield className="h-6 w-6" />
+                    <motion.div variants={itemVariants} className="group relative overflow-hidden bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Seguridad de Nivel</h3>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Tus datos están protegidos con encriptación de grado bancario. Controla quién ve qué con permisos granulares.</p>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Seguridad de Nivel</h3>
-                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Tus datos están protegidos con encriptación de grado bancario. Controla quién ve qué con permisos granulares.</p>
+                        <img 
+                            src="/images/features/security.svg" 
+                            alt="Seguridad de Nivel" 
+                            className="absolute -bottom-8 -right-8 w-48 h-48 opacity-5 dark:opacity-10 group-hover:scale-110 transition-transform duration-500 pointer-events-none grayscale" 
+                        />
                     </motion.div>
-                    <motion.div variants={itemVariants} className="bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-900 rounded-xl flex items-center justify-center text-slate-900 dark:text-white mb-6">
-                            <Globe className="h-6 w-6" />
+                    <motion.div variants={itemVariants} className="group relative overflow-hidden bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Colaboración Global</h3>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Trabaja con equipos remotos en tiempo real. Comentarios, aprobaciones y actualizaciones instantáneas.</p>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Colaboración Global</h3>
-                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Trabaja con equipos remotos en tiempo real. Comentarios, aprobaciones y actualizaciones instantáneas.</p>
+                        <img 
+                            src="/images/features/collaboration.svg" 
+                            alt="Colaboración Global" 
+                            className="absolute -bottom-8 -right-8 w-48 h-48 opacity-5 dark:opacity-10 group-hover:scale-110 transition-transform duration-500 pointer-events-none grayscale" 
+                        />
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="group relative overflow-hidden bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Asistente Inteligente</h3>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Optimiza la planificación con nuestro asistente de IA, que responde a tus preguntas y sugiere mejoras.</p>
+                        </div>
+                        <img 
+                            src="/images/features/collaboration.svg" 
+                            alt="Asistente Inteligente" 
+                            className="absolute -bottom-8 -right-8 w-48 h-48 opacity-5 dark:opacity-10 group-hover:scale-110 transition-transform duration-500 pointer-events-none grayscale" 
+                        />
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="group relative overflow-hidden bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Panel Interactivo y Adaptable</h3>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Accede y gestiona tu evento desde cualquier dispositivo con una interfaz fluida y fácil de usar.</p>
+                        </div>
+                        <img 
+                            src="/images/features/management.svg" 
+                            alt="Panel Interactivo y Adaptable" 
+                            className="absolute -bottom-8 -right-8 w-48 h-48 opacity-5 dark:opacity-10 group-hover:scale-110 transition-transform duration-500 pointer-events-none grayscale" 
+                        />
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="group relative overflow-hidden bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Creación Rápida de Eventos</h3>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Define y configura tus eventos en minutos, desde los detalles básicos hasta la asignación de recursos.</p>
+                        </div>
+                        <img 
+                            src="/images/features/security.svg" 
+                            alt="Creación Rápida de Eventos" 
+                            className="absolute -bottom-8 -right-8 w-48 h-48 opacity-5 dark:opacity-10 group-hover:scale-110 transition-transform duration-500 pointer-events-none grayscale" 
+                        />
                     </motion.div>
                 </motion.div>
             </div>

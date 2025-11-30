@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { get, post } from '@/lib/api'
+import { get, post, supabase } from '@/lib/api'
 import { ChatMessage } from '@/lib/types'
 
 interface UseChatReturn {
@@ -27,11 +27,22 @@ export function useChat(eventId: string | null): UseChatReturn {
     try {
       setLoading(true)
       setError(null)
+
+      // Check if user is authenticated before making API call
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setLoading(false)
+        return
+      }
+
       const response = await get<{ messages: ChatMessage[] }>(`/api/events/${eventId}/chat`)
       setMessages(response.messages)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch messages')
-      console.error('Error fetching messages:', err)
+      // Only log error if it's not an auth issue
+      if (err instanceof Error && !err.message.includes('Auth session')) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch messages')
+        console.error('Error fetching messages:', err)
+      }
     } finally {
       setLoading(false)
     }
@@ -40,6 +51,12 @@ export function useChat(eventId: string | null): UseChatReturn {
   const sendMessage = async (message: string) => {
     if (!eventId) {
       throw new Error('Event ID is required')
+    }
+
+    // Check if user is authenticated before making API call
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      throw new Error('Auth session missing')
     }
 
     try {
@@ -52,8 +69,11 @@ export function useChat(eventId: string | null): UseChatReturn {
       // Add both messages to state
       setMessages((prev) => [...prev, response.userMessage, response.assistantMessage])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message')
-      console.error('Error sending message:', err)
+      // Only log error if it's not an auth issue
+      if (err instanceof Error && !err.message.includes('Auth session')) {
+        setError(err instanceof Error ? err.message : 'Failed to send message')
+        console.error('Error sending message:', err)
+      }
       throw err
     }
   }
