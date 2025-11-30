@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { DateTimePicker } from '@/components/ui/date-time-picker'
 import { post } from '@/lib/api'
 import type { Event, UserRole } from '@/lib/types'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 
 type CreatedEvent = Event & { userRole: UserRole }
 
@@ -28,6 +29,7 @@ export default function NewEventPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [createdEvent, setCreatedEvent] = useState<CreatedEvent | null>(null)
+  const isOnline = useOnlineStatus()
 
   const handleChange = (
     field: keyof typeof form,
@@ -171,6 +173,13 @@ export default function NewEventPage() {
               </div>
             </div>
 
+            {!isOnline && (
+              <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-700 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-300">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                Estás offline. La creación de eventos se habilitará cuando vuelvas a tener conexión.
+              </div>
+            )}
+
             {error && (
               <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -191,27 +200,32 @@ export default function NewEventPage() {
                 Evento <span className="font-semibold text-slate-900 dark:text-white">{createdEvent.name}</span> listo para usar.
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <CalendarPlus className="h-4 w-4" />
-                Esta información se mostrará en el panel y en la línea de tiempo.
+              <p className="text-sm text-muted-foreground">
+                Asegúrate de que todos los campos son correctos.
               </p>
             )}
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
-              {createdEvent && (
-                <Button type="button" variant="outline" onClick={handleGoToUploads}>
-                  Ir a subir archivos
+
+            <div className="flex w-full gap-4 md:w-auto">
+              {createdEvent ? (
+                <Button onClick={handleGoToUploads} className="w-full md:w-auto">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Ir a Cargas
+                </Button>
+              ) : (
+                <Button type="submit" disabled={submitting || !isOnline} className="w-full md:w-auto">
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Confirmar y Crear Evento
+                    </>
+                  )}
                 </Button>
               )}
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creando...
-                  </>
-                ) : (
-                  'Crear evento'
-                )}
-              </Button>
             </div>
           </CardFooter>
         </form>
@@ -219,5 +233,3 @@ export default function NewEventPage() {
     </div>
   )
 }
-
-

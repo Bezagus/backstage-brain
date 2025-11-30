@@ -9,33 +9,46 @@ import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
-import { useChat } from "@/hooks/use-chat"
+import { useChatStore } from '@/lib/chatStore'
 import { useEvents } from "@/hooks/use-events"
+import { useOnlineStatus } from '@/hooks/use-online-status'
 import { MarkdownMessage } from "@/components/chat/markdown-message"
 
 export default function ChatPage() {
   const { events, loading: eventsLoading } = useEvents()
   const [selectedEventId, setSelectedEventId] = useState<string>('')
-  const { messages, loading, error, sendMessage } = useChat(selectedEventId || null)
+  const { messagesByEvent, loading, error, sendMessage, fetchMessages, lastUsedEventId, setLastUsedEventId } = useChatStore()
   const [inputValue, setInputValue] = useState("")
   const [sending, setSending] = useState(false)
+  const isOnline = useOnlineStatus()
+
+  const messages = messagesByEvent[selectedEventId] || []
 
   // Set first event as selected when events load
   useEffect(() => {
     if (events.length > 0 && !selectedEventId) {
-      setSelectedEventId(events[0].id)
+      setSelectedEventId(lastUsedEventId || events[0].id)
     }
-  }, [events, selectedEventId])
+  }, [events, lastUsedEventId])
+
+  useEffect(() => {
+    if (selectedEventId) {
+      setLastUsedEventId(selectedEventId)
+      if (isOnline) {
+        fetchMessages(selectedEventId)
+      }
+    }
+  }, [selectedEventId, isOnline, fetchMessages, setLastUsedEventId])
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return
+    if (!inputValue.trim() || !selectedEventId) return
 
     const messageToSend = inputValue
     setInputValue("")
     setSending(true)
 
     try {
-      await sendMessage(messageToSend)
+      await sendMessage(selectedEventId, messageToSend)
     } catch (err) {
       console.error('Failed to send message:', err)
     } finally {
@@ -59,7 +72,7 @@ export default function ChatPage() {
       ) : (
         <div className="flex items-center gap-4 mb-4">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Evento:</label>
-          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+          <Select value={selectedEventId} onValueChange={setSelectedEventId} disabled={!isOnline && events.length > 0}>
             <SelectTrigger className="w-[300px]">
               <SelectValue placeholder="Selecciona un evento" />
             </SelectTrigger>
@@ -71,6 +84,13 @@ export default function ChatPage() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+      )}
+
+      {!isOnline && events.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-700 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-300">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>Estás offline. Mostrando datos en caché.</span>
         </div>
       )}
 
@@ -98,8 +118,8 @@ export default function ChatPage() {
             <div>
                 <h2 className="font-bold text-slate-900 dark:text-white">AI Assistant</h2>
                 <p className="text-xs text-black dark:text-gray-300 flex items-center gap-1">
-                    <span className="block h-2 w-2 rounded-full bg-black dark:bg-gray-300 animate-pulse" />
-                    Online
+                    <span className={cn("block h-2 w-2 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-red-500")} />
+                    {isOnline ? 'Online' : 'Offline'}
                 </p>
             </div>
           </div>
@@ -188,16 +208,16 @@ export default function ChatPage() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !sending && handleSendMessage()}
-            disabled={sending}
+            disabled={sending || !isOnline}
           />
           <Button
             size="icon"
             className={cn(
                 "absolute right-2 h-10 w-10 rounded-full transition-all duration-200",
-                inputValue.trim() && !sending ? "bg-black hover:bg-gray-900 dark:bg-gray-900 dark:hover:bg-black scale-100" : "bg-slate-300 cursor-not-allowed scale-90 opacity-70"
+                inputValue.trim() && !sending && isOnline ? "bg-black hover:bg-gray-900 dark:bg-gray-900 dark:hover:bg-black scale-100" : "bg-slate-300 cursor-not-allowed scale-90 opacity-70"
             )}
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || sending}
+            disabled={!inputValue.trim() || sending || !isOnline}
           >
             {sending ? (
               <Loader2 className="h-4 w-4 text-white animate-spin" />

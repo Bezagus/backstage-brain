@@ -60,9 +60,11 @@ export interface EventFile {
   uploaded_at: string
 }
 
+export type Message = ChatMessage & { event_id?: string }
+
 export interface ChatMessage {
   id: string
-  user_id: string
+  user_id?: string
   role: MessageRole
   content: string
   source_file_id: string | null
@@ -72,4 +74,11 @@ export interface ChatMessage {
   event_files?: {
     file_name: string;
   };
+}
+
+export interface DashboardStats {
+  totalFiles: number
+  filesToday: number
+  lastUpdate: string | null
+  showsToday: number
 }

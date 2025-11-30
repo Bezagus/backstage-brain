@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { get, supabase } from '@/lib/api'
 import { Event, UserRole } from '@/lib/types'
+import { useEventStore } from '@/lib/eventStore'
+import { useOnlineStatus } from './use-online-status'
 
 interface EventWithRole extends Event {
   userRole: UserRole
@@ -16,11 +18,19 @@ interface UseEventsReturn {
 }
 
 export function useEvents(): UseEventsReturn {
-  const [events, setEvents] = useState<EventWithRole[]>([])
+  const { events, setEvents } = useEventStore()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isOnline = useOnlineStatus()
 
   const fetchEvents = async () => {
+    if (!isOnline) {
+      setLoading(false)
+      if (events.length === 0) {
+        setError("Estás offline y no hay eventos en caché.")
+      }
+      return
+    }
     try {
       setLoading(true)
       setError(null)
@@ -47,7 +57,7 @@ export function useEvents(): UseEventsReturn {
 
   useEffect(() => {
     fetchEvents()
-  }, [])
+  }, [isOnline])
 
   return {
     events,

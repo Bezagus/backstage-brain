@@ -1,12 +1,13 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { MessageSquare, Upload, Calendar, FileText, Star, ArrowUpRight, Loader2 } from "lucide-react"
+import { MessageSquare, Upload, Calendar, Bell, Star, ArrowUpRight, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/hooks/use-auth"
 import { useEvents } from "@/hooks/use-events"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
+import { useEffect } from 'react'
+import { useDashboardStore, DashboardStoreState, CachedEvent } from '@/lib/dashboardStore'
 
 function formatTimeAgo(dateString: string | null): { value: string; unit: string } | null {
   if (!dateString) return null
@@ -25,9 +26,34 @@ function formatTimeAgo(dateString: string | null): { value: string; unit: string
 }
 
 export default function Home() {
-  const { user } = useAuth()
+  // const { user } = useAuth()
   const { events, loading, error } = useEvents()
-  const { stats, loading: statsLoading } = useDashboardStats()
+  const { stats, loading: statsLoading, error: statsError } = useDashboardStats()
+
+  // dashboard store actions
+  const setEventsInStore = useDashboardStore((s: DashboardStoreState) => s.setEvents)
+  const setStatsInStore = useDashboardStore((s: DashboardStoreState) => s.setStats)
+  const cachedEvents = useDashboardStore((s: DashboardStoreState) => s.events)
+  const cachedStats = useDashboardStore((s: DashboardStoreState) => s.stats)
+
+  // When live events update, persist to store
+  useEffect(() => {
+    if (!loading && events && events.length > 0) {
+      setEventsInStore(events)
+    }
+  }, [loading, events, setEventsInStore])
+
+  // When live stats update, persist to store
+  useEffect(() => {
+    if (!statsLoading && stats) {
+      setStatsInStore(stats)
+    }
+  }, [statsLoading, stats, setStatsInStore])
+
+  // If offline or error, we will use cached data for rendering below
+  const eventsToRender: CachedEvent[] = (!loading && !error && events && events.length > 0) ? events : cachedEvents
+  const statsToRender = (!statsLoading && !statsError && stats) ? stats : cachedStats
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-end">
@@ -42,11 +68,14 @@ export default function Home() {
         <CardHeader className="border-b border-slate-100 dark:border-zinc-800 bg-white/50 dark:bg-white/5 backdrop-blur-sm">
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-black fill-black" />
-            Resumen 
+            Resumen del evento
+            {(!stats && cachedStats) && (
+              <span className="ml-2 text-xs text-amber-600">Mostrando estadísticas en caché</span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6 p-6 md:grid-cols-3">
-          {statsLoading ? (
+          {statsLoading && !cachedStats ? (
             <>
               <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
                 <span className="text-sm font-medium text-black dark:text-gray-300">Archivos subidos</span>
@@ -72,9 +101,9 @@ export default function Home() {
               <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
                 <span className="text-sm font-medium text-black dark:text-gray-300">Archivos subidos</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-slate-900 dark:text-white">{stats?.totalFiles || 0}</span>
-                  {stats && stats.filesToday > 0 && (
-                    <span className="text-xs text-muted-foreground">+{stats.filesToday} hoy</span>
+                  <span className="text-3xl font-bold text-slate-900 dark:text-white">{statsToRender?.totalFiles || 0}</span>
+                  {statsToRender && statsToRender.filesToday > 0 && (
+                    <span className="text-xs text-muted-foreground">+{statsToRender.filesToday} hoy</span>
                   )}
                 </div>
               </div>
@@ -82,8 +111,8 @@ export default function Home() {
               <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
                 <span className="text-sm font-medium text-black dark:text-gray-300">Última actualización</span>
                 <div className="flex items-baseline gap-2">
-                  {stats?.lastUpdate ? (() => {
-                    const timeAgo = formatTimeAgo(stats.lastUpdate)
+                  {statsToRender?.lastUpdate ? (() => {
+                    const timeAgo = formatTimeAgo(statsToRender.lastUpdate)
                     if (!timeAgo) {
                       return <span className="text-lg font-medium text-slate-600 dark:text-slate-400">Nunca</span>
                     }
@@ -105,7 +134,7 @@ export default function Home() {
               <div className="flex flex-col gap-1 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800">
                 <span className="text-sm font-medium text-black dark:text-gray-300">Próximos shows hoy</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-slate-900 dark:text-white">{stats?.showsToday || 0}</span>
+                  <span className="text-3xl font-bold text-slate-900 dark:text-white">{statsToRender?.showsToday || 0}</span>
                   <span className="text-xs text-muted-foreground">Ver agenda</span>
                 </div>
               </div>
@@ -118,13 +147,13 @@ export default function Home() {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Mis Eventos</h2>
 
-        {loading && (
+        {loading && !cachedEvents.length && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         )}
 
-        {error && (
+        {error && !cachedEvents.length && (
           <Card className="border-red-200 dark:border-red-800">
             <CardContent className="p-6">
               <p className="text-red-600 dark:text-red-400">{error}</p>
@@ -132,7 +161,7 @@ export default function Home() {
           </Card>
         )}
 
-        {!loading && !error && events.length === 0 && (
+        {!loading && !error && eventsToRender.length === 0 && (
           <Card className="border-slate-200 dark:border-zinc-800">
             <CardContent className="p-8 text-center space-y-4">
               <Calendar className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto" />
@@ -151,9 +180,9 @@ export default function Home() {
           </Card>
         )}
 
-        {!loading && !error && events.length > 0 && (
+        {!loading && !error && eventsToRender.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2">
-            {events.map((event) => (
+            {eventsToRender.map((event: CachedEvent) => (
               <Link key={event.id} href={`/events/${event.id}`}>
                 <Card className="h-full border-slate-200 dark:border-zinc-800 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 transition-all">
                   <CardHeader>

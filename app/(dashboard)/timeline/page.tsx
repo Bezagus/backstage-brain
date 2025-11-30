@@ -2,74 +2,78 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Clock, MapPin, Music, Users, DoorOpen, FileCheck, Loader2, AlertCircle, Calendar } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Clock, Music, Users, DoorOpen,  Loader2, AlertCircle, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEvents } from "@/hooks/use-events"
 import { get } from "@/lib/api"
-import type { TimelineEntry } from "@/lib/types"
+import { useTimelineStore, TimelineData } from '@/lib/timelineStore'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 
-const getIconForType = (type: string) => {
-  switch (type) {
-    case 'rehearsal': return Music
-    case 'soundcheck': return Users
-    case 'logistics': return DoorOpen
-    case 'show': return Music
-    case 'meeting': return FileCheck
-    default: return Clock
-  }
+const getIconForType = (category: string) => {
+  const cat = category.toLowerCase()
+  if (cat.includes('técnico') || cat.includes('backline') || cat.includes('sonido')) return Users
+  if (cat.includes('escenario') || cat.includes('show')) return Music
+  if (cat.includes('catering') || cat.includes('hospitality')) return DoorOpen
+  if (cat.includes('general')) return Users
+  return Clock
 }
 
-const getTypeColor = (type: string) => {
-    switch(type) {
-        case 'rehearsal': return 'bg-gray-100 text-gray-600 border-gray-200';
-        case 'soundcheck': return 'bg-gray-100 text-gray-600 border-gray-200';
-        case 'logistics': return 'bg-gray-100 text-gray-600 border-gray-200';
-        case 'show': return 'bg-gray-100 text-gray-600 border-gray-200';
-        default: return 'bg-gray-100 text-gray-600 border-gray-200';
-    }
+const getTypeColor = (category: string) => {
+    const cat = category.toLowerCase()
+    if (cat.includes('técnico')) return 'bg-blue-100 text-blue-600 border-blue-200'
+    if (cat.includes('escenario')) return 'bg-purple-100 text-purple-600 border-purple-200'
+    if (cat.includes('catering')) return 'bg-amber-100 text-amber-600 border-amber-200'
+    if (cat.includes('general')) return 'bg-gray-100 text-gray-600 border-gray-200'
+    return 'bg-gray-100 text-gray-600 border-gray-200'
 }
 
-const getTypeDot = (type: string) => {
-    switch(type) {
-        case 'rehearsal': return 'bg-gray-500';
-        case 'soundcheck': return 'bg-gray-500';
-        case 'logistics': return 'bg-gray-500';
-        case 'show': return 'bg-gray-500';
-        default: return 'bg-gray-500';
-    }
+const getTypeDot = (category: string) => {
+    const cat = category.toLowerCase()
+    if (cat.includes('técnico')) return 'bg-blue-500'
+    if (cat.includes('escenario')) return 'bg-purple-500'
+    if (cat.includes('catering')) return 'bg-amber-500'
+    if (cat.includes('general')) return 'bg-gray-500'
+    return 'bg-gray-500'
 }
 
 export default function TimelinePage() {
   const { events, loading: eventsLoading } = useEvents()
   const [selectedEventId, setSelectedEventId] = useState<string>('')
-  const [timeline, setTimeline] = useState<TimelineEntry[]>([])
+  const { timelineByEvent, setTimeline } = useTimelineStore()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const isOnline = useOnlineStatus()
 
-  // Set first event as selected when events load
+  const timelineData = timelineByEvent[selectedEventId]
+
   useEffect(() => {
     if (events.length > 0 && !selectedEventId) {
       setSelectedEventId(events[0].id)
     }
   }, [events, selectedEventId])
 
-  // Fetch timeline when event is selected
-  useEffect(() => {
-    if (selectedEventId) {
-      fetchTimeline()
-    }
-  }, [selectedEventId])
-
-  const fetchTimeline = async () => {
-    if (!selectedEventId) return
+  const fetchTimeline = async (eventId: string) => {
+    if (!eventId) return
 
     setLoading(true)
     setError('')
     try {
-      const response = await get<{ timeline: TimelineEntry[] }>(`/api/events/${selectedEventId}/timeline`)
-      setTimeline(response.timeline)
+      const response = await get<{ timelines: { category: string; items: { label: string; date: string }[] }[] }>(
+        `/api/events/${eventId}/timeline`
+      )
+
+      const normalized: TimelineData = {
+        timeline: response.timelines.map((group) => ({
+          category: group.category,
+          events: group.items.map((item) => ({
+            label: item.label,
+            datetime: item.date,
+          })),
+        })),
+      }
+
+      setTimeline(eventId, normalized)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar timeline')
     } finally {
@@ -77,17 +81,26 @@ export default function TimelinePage() {
     }
   }
 
-  const formatTime = (time: string) => {
-    return new Date(time).toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  useEffect(() => {
+    if (selectedEventId && isOnline) {
+      fetchTimeline(selectedEventId)
+    }
+  }, [selectedEventId, isOnline])
+
+  const formatTime = (datetime: string) => {
+    const parts = datetime.split(' - ')
+    return parts.length > 1 ? parts[1] : datetime
   }
+
+  const selectedEvent = events.find(e => e.id === selectedEventId)
 
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Cronograma del Evento</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Cronograma del Evento</h1>
+          {selectedEvent && <p className="text-muted-foreground mt-1">{selectedEvent.name}</p>}
+        </div>
       </div>
 
       {/* Event Selection */}
@@ -95,7 +108,7 @@ export default function TimelinePage() {
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
         </div>
-      ) : events.length === 0 ? (
+      ) : !events ? (
         <Card className="border-slate-200 dark:border-zinc-800">
           <CardContent className="p-8 text-center">
             <p className="text-slate-600 dark:text-slate-400">No tienes eventos disponibles.</p>
@@ -105,7 +118,7 @@ export default function TimelinePage() {
         <>
           <div className="flex items-center gap-4 mb-8">
             <label className="text-sm font-medium">Evento:</label>
-            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <Select value={selectedEventId} onValueChange={setSelectedEventId} disabled={!isOnline && events.length > 0}>
               <SelectTrigger className="w-[300px]">
                 <SelectValue placeholder="Selecciona un evento" />
               </SelectTrigger>
@@ -119,6 +132,13 @@ export default function TimelinePage() {
             </Select>
           </div>
 
+          {!isOnline && events.length > 0 && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-700 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-300">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Estás offline. Mostrando datos en caché.</span>
+            </div>
+          )}
+
           {error && (
             <div className="flex items-center gap-2 p-4 mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
               <AlertCircle className="h-5 w-5 shrink-0" />
@@ -130,7 +150,7 @@ export default function TimelinePage() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
-          ) : timeline.length === 0 ? (
+          ) : !timelineData ? (
             <Card className="border-slate-200 dark:border-zinc-800">
               <CardContent className="p-8 text-center">
                 <Calendar className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
@@ -143,55 +163,50 @@ export default function TimelinePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="relative pl-8 space-y-8 before:absolute before:inset-0 before:ml-3.5 before:h-full before:w-0.5 before:bg-gray-200 dark:before:bg-zinc-800">
-              {timeline.map((entry) => {
-                const Icon = getIconForType(entry.type)
-                return (
-                  <div key={entry.id} className="relative">
-                    {/* Dot on timeline */}
-                    <div className={cn(
-                      "absolute -left-[34px] mt-1.5 h-4 w-4 rounded-full border-4 border-white dark:border-zinc-950 shadow-sm",
-                      getTypeDot(entry.type)
-                    )} />
+            <div className="space-y-10">
+              {timelineData.timeline.map((category, catIndex) => (
+                <div key={catIndex}>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-3">
+                     <div className={cn("w-3 h-3 rounded-full", getTypeDot(category.category))} />
+                    {category.category}
+                  </h2>
+                  <div className="relative pl-8 space-y-8 before:absolute before:inset-0 before:ml-3.5 before:h-full before:w-0.5 before:bg-gray-200 dark:before:bg-zinc-800">
+                    {category.events.map((entry, entryIndex) => {
+                      const Icon = getIconForType(category.category)
+                      return (
+                        <div key={entryIndex} className="relative">
+                          {/* Dot on timeline */}
+                          <div className={cn(
+                            "absolute -left-[34px] mt-1.5 h-4 w-4 rounded-full border-4 border-white dark:border-zinc-950 shadow-sm",
+                            getTypeDot(category.category)
+                          )} />
 
-                    <Card className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-zinc-800">
-                      <CardContent className="p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                        {/* Time & Icon Box */}
-                        <div className={cn(
-                          "flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl border",
-                          getTypeColor(entry.type)
-                        )}>
-                          <Icon className="h-6 w-6 mb-1" />
+                          <Card className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-zinc-800">
+                            <CardContent className="p-5 flex gap-4 items-center">
+                              {/* Time & Icon Box */}
+                              <div className={cn(
+                                "flex-shrink-0 flex flex-col items-center justify-center w-24 h-16 rounded-2xl border",
+                                getTypeColor(category.category)
+                              )}>
+                                <span className="font-bold text-lg">{formatTime(entry.datetime)}</span>
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">
+                                  {entry.label}
+                                </h3>
+                              </div>
+                              <div className={cn("p-2 rounded-full", getTypeColor(category.category))}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                            </CardContent>
+                          </Card>
                         </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="secondary" className="h-6 font-mono text-xs tracking-wider">
-                              {formatTime(entry.time)}
-                            </Badge>
-                          </div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">
-                            {entry.description}
-                          </h3>
-
-                          {entry.location && (
-                            <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400 text-sm">
-                              <MapPin className="h-4 w-4" />
-                              <span>{entry.location}</span>
-                            </div>
-                          )}
-
-                          {entry.notes && (
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                              {entry.notes}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                      )
+                    })}
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           )}
         </>
